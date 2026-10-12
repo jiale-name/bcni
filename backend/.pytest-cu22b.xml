@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="25" time="155.005" timestamp="2026-09-23T10:36:10.101549+08:00" hostname="DESKTOP-DKO2LI9"><testcase classname="tests.test_privacy_rights" name="test_correction_request_rejects_non_whitelisted_field" time="0.010" /><testcase classname="tests.test_privacy_rights" name="test_correction_request_rejects_same_value" time="0.005" /><testcase classname="tests.test_privacy_rights" name="test_correction_request_limits_attachments_and_reason" time="0.003" /><testcase classname="tests.test_privacy_rights" name="test_reject_requires_reason" time="0.003" /><testcase classname="tests.test_privacy_rights" name="test_export_format_does_not_claim_pdf" time="0.003" /><testcase classname="tests.test_privacy_rights" name="test_filter_rejects_reversed_range" time="0.004" /><testcase classname="tests.test_privacy_rights" name="test_request_status_name_maps_processing_to_pending" time="0.003" /><testcase classname="tests.test_privacy_rights" name="test_api71_self_profile_never_exposes_id_card_plaintext" time="9.016" /><testcase classname="tests.test_privacy_rights" name="test_api71_without_linked_talent_is_40401" time="8.275" /><testcase classname="tests.test_privacy_rights" name="test_api71_requires_permission" time="7.692" /><testcase classname="tests.test_privacy_rights" name="test_api72_optimistic_lock_and_duplicate_guard" time="8.016" /><testcase classname="tests.test_privacy_rights" name="test_api72_rejects_foreign_talent" time="7.997" /><testcase classname="tests.test_privacy_rights" name="test_api73_hr_sees_and_api74_approve_applies_value" time="8.895" /><testcase classname="tests.test_privacy_rights" name="test_api74_phone_correction_recomputes_enc_and_hash_and_masks_log" time="10.135" /><testcase classname="tests.test_privacy_rights" name="test_change_vocabulary_covers_phone_but_snapshot_never_returns_it" time="9.667" /><testcase classname="tests.test_privacy_rights" name="test_api74_reject_sets_reason_and_terminates" time="8.805" /><testcase classname="tests.test_privacy_rights" name="test_api74_requires_manager_role" time="8.058" /><testcase classname="tests.test_privacy_rights" name="test_api77_delete_five_step_orchestration" time="7.714" /><testcase classname="tests.test_privacy_rights" name="test_api77_idempotent_replay_returns_first_result" time="8.286" /><testcase classname="tests.test_privacy_rights" name="test_api77_reject_does_not_touch_data" time="7.970" /><testcase classname="tests.test_privacy_rights" name="test_api76_list_deletions_rejects_foreign_view_for_emp" time="7.975"><failure message="TypeError: paginated() takes 2 positional arguments but 4 were given">env = {'client': &lt;starlette.testclient.TestClient object at 0x000002AA7FF72F10&gt;, 'tokens': {'adm': 'eyJhbGciOiJIUzI1NiIsInR5...s1rQZPokhLxlo1BmfZh6SdJG2306wybovOIY_wTY', ...}, 'tenant_id': 361098877589393408, 'talent_id': 361098892038770688, ...}
+
+    def test_api76_list_deletions_rejects_foreign_view_for_emp(env) -&gt; None:
+        """EMP 调列表接口只会看到**自己的**申请（传别人的 applicant_user_id 无效）。"""
+        other_id = env["adm_user_id"]
+&gt;       resp = env["client"].get(
+            "/api/v1/privacy/deletions",
+            params={"applicant_user_id": str(other_id)},
+            headers=_h(env["tokens"]["emp"]),
+        ).json()
+
+tests\test_privacy_rights.py:603: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+.venv\Lib\site-packages\starlette\testclient.py:483: in get
+    return super().get(
+.venv\Lib\site-packages\httpx\_client.py:1053: in get
+    return self.request(
+.venv\Lib\site-packages\starlette\testclient.py:455: in request
+    return super().request(
+.venv\Lib\site-packages\httpx\_client.py:825: in request
+    return self.send(request, auth=auth, follow_redirects=follow_redirects)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv\Lib\site-packages\httpx\_client.py:914: in send
+    response = self._send_handling_auth(
+.venv\Lib\site-packages\httpx\_client.py:942: in _send_handling_auth
+    response = self._send_handling_redirects(
+.venv\Lib\site-packages\httpx\_client.py:979: in _send_handling_redirects
+    response = self._send_single_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv\Lib\site-packages\httpx\_client.py:1014: in _send_single_request
+    response = transport.handle_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv\Lib\site-packages\starlette\testclient.py:354: in handle_request
+    raise exc
+.venv\Lib\site-packages\starlette\testclient.py:351: in handle_request
+    portal.call(self.app, scope, receive, send)
+.venv\Lib\site-packages\anyio\from_thread.py:340: in call
+    return cast(T_Retval, self.start_task_soon(func, *args).result())
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\Windows\.workbuddy\binaries\python\versions\3.13.12\Lib\concurrent\futures\_base.py:460: in result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+C:\Users\Windows\.workbuddy\binaries\python\versions\3.13.12\Lib\concurrent\futures\_base.py:402: in __get_result
+    raise self._exception
+.venv\Lib\site-packages\anyio\from_thread.py:265: in _call_func
+    retval = await retval_or_awaitable
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv\Lib\site-packages\fastapi\applications.py:1163: in __call__
+    await super().__call__(scope, receive, send)
+.venv\Lib\site-packages\starlette\applications.py:96: in __call__
+    await self.middleware_stack(scope, receive, send)
+.venv\Lib\site-packages\starlette\middleware\errors.py:186: in __call__
+    raise exc
+.venv\Lib\site-packages\starlette\middleware\errors.py:164: in __call__
+    await self.app(scope, receive, _send)
+.venv\Lib\site-packages\starlette\middleware\cors.py:88: in __call__
+    await self.app(scope, receive, send)
+app\core\middleware.py:76: in __call__
+    await self.app(scope, receive, send_wrapper)
+app\core\middleware.py:116: in __call__
+    await self.app(scope, receive, send)
+app\core\middleware.py:219: in __call__
+    await self.app(scope, receive, send)
+.venv\Lib\site-packages\starlette\middleware\exceptions.py:63: in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+.venv\Lib\site-packages\starlette\_exception_handler.py:53: in wrapped_app
+    raise exc
+.venv\Lib\site-packages\starlette\_exception_handler.py:42: in wrapped_app
+    await app(scope, receive, sender)
+.venv\Lib\site-packages\fastapi\middleware\asyncexitstack.py:18: in __call__
+    await self.app(scope, receive, send)
+.venv\Lib\site-packages\starlette\routing.py:670: in __call__
+    await self.middleware_stack(scope, receive, send)
+.venv\Lib\site-packages\fastapi\routing.py:2734: in app
+    await route.handle(scope, receive, send)
+.venv\Lib\site-packages\fastapi\routing.py:1780: in handle
+    await self.original_router.handle(scope, receive, send)
+.venv\Lib\site-packages\fastapi\routing.py:2789: in handle
+    await included_router._handle_selected(scope, receive, send)
+.venv\Lib\site-packages\fastapi\routing.py:1791: in _handle_selected
+    await route.handle(scope, receive, send)
+.venv\Lib\site-packages\fastapi\routing.py:1780: in handle
+    await self.original_router.handle(scope, receive, send)
+.venv\Lib\site-packages\fastapi\routing.py:2789: in handle
+    await included_router._handle_selected(scope, receive, send)
+.venv\Lib\site-packages\fastapi\routing.py:1800: in _handle_selected
+    await original_route.handle(scope, receive, send)
+.venv\Lib\site-packages\fastapi\routing.py:1279: in handle
+    await app(scope, receive, send)
+.venv\Lib\site-packages\fastapi\routing.py:158: in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+.venv\Lib\site-packages\starlette\_exception_handler.py:53: in wrapped_app
+    raise exc
+.venv\Lib\site-packages\starlette\_exception_handler.py:42: in wrapped_app
+    await app(scope, receive, sender)
+.venv\Lib\site-packages\fastapi\routing.py:144: in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+.venv\Lib\site-packages\fastapi\routing.py:706: in app
+    raw_response = await run_endpoint_function(
+.venv\Lib\site-packages\fastapi\routing.py:354: in run_endpoint_function
+    return await run_in_threadpool(dependant.call, **values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv\Lib\site-packages\starlette\concurrency.py:34: in run_in_threadpool
+    return await anyio.to_thread.run_sync(func)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv\Lib\site-packages\anyio\to_thread.py:65: in run_sync
+    return await get_async_backend().run_sync_in_worker_thread(
+.venv\Lib\site-packages\anyio\_backends\_asyncio.py:2706: in run_sync_in_worker_thread
+    return await future
+           ^^^^^^^^^^^^
+.venv\Lib\site-packages\anyio\_backends\_asyncio.py:1100: in run
+    result = context.run(func, *args)
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+filters = PrivacyRequestFilter(request_type=None, status=None, talent_id=None, applicant_user_id=361098880596709376, overdue_only=False, start_time=None, end_time=None)
+page = 1, per_page = 20
+principal = CurrentPrincipal(user_id=361098886380654592, tenant_id=361098877589393408, org_id=None, roles=('EMP',), data_scope=3, username=None, real_name=None, org_name=None, dept_ids=())
+db = &lt;sqlalchemy.orm.session.Session object at 0x000002AA0123C320&gt;
+
+    @router.get(
+        "/privacy/deletions",
+        response_model=CommonResp[list[PrivacyRequestOut]],
+        summary="API-76 删除申请列表（ADM / HR；EMP 仅见自己的）",
+        dependencies=[Depends(require_perm("privacy:list"))],
+        description=(
+            "删除申请列表。筛选 / 排序 / 可见范围口径与 API-73 **完全一致**"
+            "（同一套服务方法，仅 `request_type` 不同）。"
+        ),
+    )
+    def list_deletions(
+        filters: PrivacyRequestFilter = Depends(_privacy_filters),
+        page: int = Query(1, ge=1, description="页码，从 1 起"),
+        per_page: int = Query(20, ge=1, description="每页条数；超过 100 按 100 处理"),
+        principal: CurrentPrincipal = Depends(get_current_principal),
+        db: Session = Depends(get_db),
+    ) -&gt; CommonResp[list[PrivacyRequestOut]]:
+        items, total, current, size = PrivacyService.list_requests(
+            db,
+            principal,
+            filters,
+            request_type=int(PrivacyRequestType.DELETION),
+            page=page,
+            per_page=per_page,
+        )
+&gt;       return paginated(items, total, current, size)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: paginated() takes 2 positional arguments but 4 were given
+
+app\routers\privacy_router.py:317: TypeError</failure></testcase><testcase classname="tests.test_privacy_rights" name="test_api78_submit_then_api79_download_twice" time="8.250" /><testcase classname="tests.test_privacy_rights" name="test_api79_rejects_non_export_request" time="8.040" /><testcase classname="tests.test_privacy_rights" name="test_api80_ledger_summary_scope_and_by_type" time="8.025" /><testcase classname="tests.test_privacy_rights" name="test_api80_overdue_only_filter" time="8.155" /></testsuite></testsuites>

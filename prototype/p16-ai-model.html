@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>模型配置与 Prompt 管理 · P-16</title>
+<style>
+:root{
+  --bg:#f3f6f7; --panel:#ffffff; --line:#d9e3e6; --line-2:#ecf1f2;
+  --txt:#18262d; --txt-2:#52636a; --txt-3:#84939a;
+  --primary:#175d75; --primary-weak:#e5f2f4; --primary-deep:#0f465b;
+  --danger:#c8474f; --danger-weak:#fcedee;
+  --warn:#b76b16; --warn-weak:#fff5e2;
+  --ok:#16836a; --ok-weak:#e6f5ef;
+  --info:#526da6; --info-weak:#eff2fb;
+  --nav-bg:#e9f4f3; --nav-line:#c9e1df; --nav-hover:#dff0ef;
+  --nav-active:#c5e6e5; --nav-active-txt:#0f6670; --nav-group:#6b8588;
+  --radius:6px; --sidebar:224px; --topbar:56px;
+  --shadow:0 1px 3px rgba(24,47,56,.07);
+  --mono:ui-monospace,Consolas,"Courier New",monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  font-family:-apple-system,"Segoe UI","Microsoft YaHei","PingFang SC",sans-serif;
+  background:var(--bg); color:var(--txt); font-size:14px; line-height:1.55;
+}
+a{color:var(--primary);text-decoration:none}
+a:hover{text-decoration:underline}
+.mark{display:inline-flex;align-items:center;justify-content:center;width:17px;height:17px;
+  border-radius:50%;background:var(--danger);color:#fff;font-size:11px;font-weight:700;
+  margin-left:5px;vertical-align:1px;flex:0 0 auto}
+/* ===== 布局 ===== */
+.app{display:flex;max-width:1440px;margin:0 auto;min-height:100vh;background:var(--panel);
+  box-shadow:0 1px 14px rgba(24,47,56,.07)}
+.sidebar{width:var(--sidebar);flex:0 0 var(--sidebar);border-right:1px solid var(--line);
+  display:flex;flex-direction:column;background:var(--nav-bg);border-right-color:var(--nav-line)}
+.brand{height:var(--topbar);display:flex;align-items:center;gap:9px;padding:0 16px;
+  border-bottom:1px solid var(--nav-line);font-weight:700;font-size:14px;letter-spacing:.2px}
+.brand .dot{width:22px;height:22px;border-radius:5px;background:#168c92;color:#fff;
+  font-size:12px;display:flex;align-items:center;justify-content:center;flex:0 0 auto}
+.brand small{font-weight:400;font-size:11px;color:var(--txt-3);margin-left:2px}
+.nav{padding:8px 8px 14px;flex:1;overflow-y:auto}
+.nav .grp{font-size:11px;color:var(--nav-group);padding:12px 12px 5px;letter-spacing:.6px}
+.nav a{display:flex;align-items:center;gap:9px;padding:8px 11px;border-radius:5px;
+  color:#46656a;font-size:13.5px;margin-bottom:1px}
+.nav a:hover{background:var(--nav-hover);color:#1a5b63;text-decoration:none}
+.nav a.active{background:var(--nav-active);color:var(--nav-active-txt);font-weight:600;
+  box-shadow:inset 3px 0 0 #168c92}
+.nav a.active .ico{color:#168c92;opacity:1}
+.nav .ico{width:15px;text-align:center;opacity:.8;font-size:13px;flex:0 0 auto}
+.nav .lock{margin-left:auto;font-size:10.5px;color:var(--nav-group)}
+.userbox{border-top:1px solid var(--nav-line);padding:11px 14px;display:flex;gap:8px;
+  align-items:center;font-size:12.5px;color:var(--txt-2)}
+.avatar{width:27px;height:27px;border-radius:50%;background:#d4edeb;
+  color:#0f6670;display:flex;align-items:center;justify-content:center;
+  font-size:12px;font-weight:700;flex:0 0 auto}
+/* ===== 主区 ===== */
+.main{flex:1;min-width:0;display:flex;flex-direction:column}
+.topbar{height:var(--topbar);flex:0 0 var(--topbar);border-bottom:1px solid var(--line);
+  display:flex;align-items:center;justify-content:space-between;padding:0 20px;gap:12px}
+.crumb{font-size:12.5px;color:var(--txt-3);min-width:0}
+.crumb b{color:var(--txt);font-weight:600;font-size:15px;margin-right:8px}
+.topbar .acts{display:flex;gap:10px;align-items:center;font-size:13px;color:var(--txt-2);flex:0 0 auto}
+.pbadge{background:var(--warn-weak);color:var(--warn);border:1px solid #f0e0b8;
+  border-radius:4px;padding:1px 7px;font-size:11.5px;font-weight:600}
+.content{padding:16px 20px 30px}
+/* ===== 工具条 ===== */
+.toolbar{display:flex;gap:9px;align-items:center;margin-bottom:13px;flex-wrap:wrap}
+.toolbar .grow{flex:1}
+input[type=text],input[type=password],input[type=number],select,textarea,.input{
+  height:32px;padding:0 10px;border:1px solid var(--line);border-radius:5px;background:#fff;
+  color:var(--txt);font-size:13px;outline:none;font-family:inherit}
+input[type=text],input[type=password],textarea{min-width:176px}
+input::placeholder,textarea::placeholder{color:var(--txt-3)}
+input:focus,select:focus,textarea:focus{border-color:var(--primary);box-shadow:0 0 0 2px var(--primary-weak)}
+textarea{height:auto;padding:8px 10px;line-height:1.6;resize:vertical}
+select{min-width:120px;cursor:pointer}
+.btn{height:32px;padding:0 13px;border:1px solid var(--line);border-radius:5px;background:#fff;
+  color:var(--txt);font-size:13px;cursor:pointer;display:inline-flex;align-items:center;
+  gap:5px;font-family:inherit;white-space:nowrap}
+.btn:hover{border-color:var(--primary);color:var(--primary)}
+.btn-primary{background:var(--primary);border-color:var(--primary);color:#fff}
+.btn-primary:hover{background:var(--primary-deep);color:#fff}
+.btn-danger{color:var(--danger);border-color:#eccaca}
+.btn-danger:hover{background:var(--danger-weak);border-color:var(--danger);color:var(--danger)}
+.btn-text{border:none;padding:0 5px;color:var(--primary);background:none;height:auto}
+.btn-text:hover{text-decoration:underline;color:var(--primary)}
+.btn-sm{height:26px;padding:0 9px;font-size:12.5px}
+.btn[disabled]{opacity:.5;cursor:not-allowed}
+/* ===== 卡片 ===== */
+.card{background:#fff;border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;
+  box-shadow:var(--shadow);margin-bottom:14px}
+.card-hd{display:flex;align-items:center;justify-content:space-between;gap:10px;
+  padding:11px 14px;border-bottom:1px solid var(--line);background:#fbfdfc}
+.card-hd h3{font-size:13.5px;font-weight:600}
+.card-hd .sub{font-size:12px;color:var(--txt-3);font-weight:400;margin-left:8px}
+.card-bd{padding:14px}
+.grid{display:grid;gap:14px}
+.g2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.g3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.g4{grid-template-columns:repeat(4,minmax(0,1fr))}
+/* ===== KPI ===== */
+.stat{background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:13px 15px;
+  box-shadow:var(--shadow)}
+.stat .lbl{font-size:12.5px;color:var(--txt-2);display:flex;align-items:center;gap:5px}
+.stat .num{font-size:25px;font-weight:700;margin-top:5px;letter-spacing:-.4px;
+  font-variant-numeric:tabular-nums}
+.stat .num small{font-size:13px;font-weight:600;color:var(--txt-2);margin-left:2px}
+.stat .sub{font-size:12px;color:var(--txt-3);margin-top:3px}
+.stat .up{color:var(--danger)}
+.stat .down{color:var(--ok)}
+/* ===== 表格 ===== */
+table{width:100%;border-collapse:collapse;font-size:13px}
+thead th{background:#f8fbfa;text-align:left;font-weight:600;color:var(--txt-2);
+  padding:10px 13px;border-bottom:1px solid var(--line);white-space:nowrap}
+tbody td{padding:11px 13px;border-bottom:1px solid var(--line-2);vertical-align:middle}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:hover{background:#fafcff}
+td.nowrap,th.nowrap{white-space:nowrap}
+td.num{font-variant-numeric:tabular-nums;text-align:right}
+.ell{max-width:230px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block}
+.muted{color:var(--txt-3)}
+.mono{font-family:var(--mono);font-size:12.5px}
+.ops{white-space:nowrap}
+.ops a{margin-right:9px}
+.ops a:last-child{margin-right:0}
+/* ===== 标签 ===== */
+.tag{display:inline-block;padding:1px 8px;border-radius:9px;font-size:12px;line-height:17px;
+  white-space:nowrap}
+.tag-ok{background:var(--ok-weak);color:var(--ok)}
+.tag-warn{background:var(--warn-weak);color:var(--warn)}
+.tag-danger{background:var(--danger-weak);color:var(--danger)}
+.tag-info{background:var(--info-weak);color:var(--info)}
+.tag-gray{background:#f2f4f7;color:var(--txt-2)}
+.tag-line{background:#fff;border:1px solid var(--line);color:var(--txt-2)}
+.chip{display:inline-flex;align-items:center;gap:4px;background:var(--primary-weak);
+  color:var(--primary);border-radius:4px;padding:2px 8px;font-size:12px;margin:0 5px 5px 0}
+.chip .x{opacity:.55;font-size:13px;cursor:pointer}
+/* ===== 分页 ===== */
+.pager{display:flex;justify-content:space-between;align-items:center;padding:11px 14px;
+  border-top:1px solid var(--line);font-size:12.5px;color:var(--txt-2);flex-wrap:wrap;gap:8px}
+.pages{display:flex;gap:5px;align-items:center}
+.pages span{min-width:27px;height:27px;padding:0 7px;border:1px solid var(--line);border-radius:5px;
+  display:flex;align-items:center;justify-content:center;cursor:pointer;background:#fff;font-size:12.5px}
+.pages span.cur{background:var(--primary);border-color:var(--primary);color:#fff}
+/* ===== 状态页 ===== */
+.state-wrap{border:1px dashed var(--line);border-radius:var(--radius);padding:42px 20px;
+  text-align:center;color:var(--txt-2);background:#fff}
+.state-wrap .big{font-size:32px;margin-bottom:9px;line-height:1}
+.state-wrap h4{font-size:15px;color:var(--txt);margin-bottom:5px}
+.state-wrap p{font-size:12.5px;color:var(--txt-3);margin-bottom:13px}
+.skeleton{height:13px;border-radius:4px;background:linear-gradient(90deg,#f0f2f5,#e6e9ee,#f0f2f5);
+  background-size:200% 100%;animation:sk 1.2s linear infinite;margin:11px 0}
+@keyframes sk{from{background-position:200% 0}to{background-position:-200% 0}}
+/* ===== 标注 ===== */
+.legend{margin-top:6px;border-top:1px dashed var(--line);padding-top:11px;font-size:12.5px;
+  color:var(--txt-3);line-height:1.9}
+.legend b{color:var(--txt-2)}
+.state-box{margin-top:16px;border:1px solid var(--line);border-radius:var(--radius);overflow:hidden}
+.state-box>header{background:#f8fbfa;padding:8px 13px;border-bottom:1px solid var(--line);
+  font-size:12px;color:var(--txt-2);font-family:var(--mono)}
+.state-box .body{padding:14px}
+/* ===== 提示条 ===== */
+.alert{display:flex;gap:9px;align-items:flex-start;padding:10px 13px;border-radius:var(--radius);
+  font-size:13px;margin-bottom:13px;line-height:1.6}
+.alert .i{flex:0 0 auto;font-weight:700}
+.alert-info{background:var(--info-weak);color:#2f4a80;border:1px solid #d6e0f5}
+.alert-warn{background:var(--warn-weak);color:#8a6216;border:1px solid #f0e2ba}
+.alert-danger{background:var(--danger-weak);color:#9c3434;border:1px solid #f2cfcf}
+.alert-ok{background:var(--ok-weak);color:#166b3e;border:1px solid #cbe8da}
+.alert a{font-weight:600}
+/* ===== 表单 ===== */
+.form-row{display:flex;gap:14px;margin-bottom:14px;align-items:flex-start}
+.form-row>label{flex:0 0 132px;text-align:right;padding-top:7px;font-size:13px;color:var(--txt-2)}
+.form-row>label .req{color:var(--danger);margin-right:3px}
+.form-row .ctl{flex:1;min-width:0}
+.form-help{font-size:12px;color:var(--txt-3);margin-top:5px}
+.radio,.check{display:inline-flex;align-items:center;gap:6px;margin-right:16px;font-size:13px;cursor:pointer}
+/* ===== 上传区 ===== */
+.drop{border:1.5px dashed #c7d3e4;border-radius:var(--radius);background:#fbfdff;
+  padding:30px 20px;text-align:center}
+.drop .ic{font-size:30px;color:var(--primary);opacity:.8;margin-bottom:8px}
+.drop h4{font-size:14px;margin-bottom:5px}
+.drop p{font-size:12.5px;color:var(--txt-3);margin-bottom:12px}
+/* ===== 步骤条 ===== */
+.steps{display:flex;align-items:center;gap:0;margin:4px 0 18px;flex-wrap:wrap}
+.step{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--txt-3)}
+.step .n{width:22px;height:22px;border-radius:50%;border:1px solid var(--line);background:#fff;
+  display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;flex:0 0 auto}
+.step.done{color:var(--ok)} .step.done .n{background:var(--ok-weak);border-color:#bfe3d0;color:var(--ok)}
+.step.cur{color:var(--primary);font-weight:600}
+.step.cur .n{background:var(--primary);border-color:var(--primary);color:#fff}
+.step-line{flex:1;height:1px;background:var(--line);margin:0 12px;min-width:20px}
+/* ===== 进度条 ===== */
+.progress{height:7px;border-radius:4px;background:#eef1f6;overflow:hidden}
+.progress>i{display:block;height:100%;background:var(--primary);border-radius:4px}
+.progress.ok>i{background:var(--ok)}
+.progress.warn>i{background:var(--warn)}
+/* ===== 并排对比（复核 / 合并） ===== */
+.diff{display:grid;grid-template-columns:1fr 1fr;gap:0;border:1px solid var(--line);
+  border-radius:var(--radius);overflow:hidden;background:#fff}
+.diff>div{padding:12px 14px;font-size:13px}
+.diff>div:first-child{border-right:1px solid var(--line);background:#fbfdfc}
+.diff h5{font-size:12px;color:var(--txt-3);font-weight:600;margin-bottom:8px;
+  display:flex;justify-content:space-between;align-items:center}
+.diff p{margin-bottom:8px;line-height:1.7}
+.diff p:last-child{margin-bottom:0}
+.hl{background:var(--warn-weak);border-bottom:1px solid #eddcae;padding:0 2px;border-radius:2px}
+.hl-ok{background:var(--ok-weak);border-bottom:1px solid #c3e5d3;padding:0 2px}
+/* ===== 时间线（变更留痕） ===== */
+.timeline{position:relative;padding-left:22px}
+.timeline:before{content:"";position:absolute;left:5px;top:5px;bottom:5px;width:1px;background:var(--line)}
+.tl-item{position:relative;padding-bottom:15px}
+.tl-item:last-child{padding-bottom:0}
+.tl-item:before{content:"";position:absolute;left:-21px;top:5px;width:9px;height:9px;border-radius:50%;
+  background:#fff;border:2px solid var(--primary)}
+.tl-item.ai:before{border-color:var(--info)}
+.tl-item.merge:before{border-color:var(--warn)}
+.tl-head{font-size:13px;display:flex;gap:9px;align-items:baseline;flex-wrap:wrap}
+.tl-head .who{color:var(--txt-2)}
+.tl-body{font-size:12.5px;color:var(--txt-2);margin-top:4px;line-height:1.8}
+.tl-body .old{color:var(--txt-3);text-decoration:line-through}
+.tl-body .new{color:var(--ok);font-weight:600}
+/* ===== 问答（对话流） ===== */
+.chat{background:#f5f9f9;border:1px solid var(--line);border-radius:var(--radius);padding:14px;
+  min-height:300px}
+.msg{display:flex;gap:9px;margin-bottom:16px}
+.msg .av{width:26px;height:26px;border-radius:5px;flex:0 0 auto;display:flex;align-items:center;
+  justify-content:center;font-size:11.5px;font-weight:700}
+.msg.user{flex-direction:row-reverse}
+.msg.user .av{background:var(--primary);color:#fff}
+.msg.ai .av{background:var(--ok-weak);color:var(--ok)}
+.msg .bub{max-width:76%;background:#fff;border:1px solid var(--line);border-radius:var(--radius);
+  padding:10px 13px;font-size:13px;line-height:1.75}
+.msg.user .bub{background:var(--primary-weak);border-color:#d3e2fa}
+.msg .bub p{margin-bottom:7px}
+.msg .bub p:last-child{margin-bottom:0}
+.msg .meta{font-size:11.5px;color:var(--txt-3);margin-top:7px}
+.ph{background:#f2f4f7;border:1px solid var(--line);border-radius:3px;padding:0 4px;
+  font-family:var(--mono);font-size:12px;color:#7a6a2f}
+.cite{background:#fbfdff;border:1px solid var(--line);border-left:3px solid var(--ok);
+  border-radius:4px;padding:9px 11px;margin-top:9px;font-size:12.5px}
+.cite .hd{display:flex;justify-content:space-between;gap:8px;color:var(--txt-2);margin-bottom:4px}
+.cite .txt{color:var(--txt-2);line-height:1.7}
+.compose{display:flex;gap:9px;align-items:flex-end;margin-top:12px}
+.compose textarea{flex:1}
+/* ===== 上传文件列表 / 明细 ===== */
+.filelist{border:1px solid var(--line);border-radius:var(--radius);overflow:hidden}
+.filelist .fi{display:flex;align-items:center;gap:10px;padding:9px 13px;font-size:13px;
+  border-bottom:1px solid var(--line-2)}
+.filelist .fi:last-child{border-bottom:none}
+.filelist .fi .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* ===== 图（内联 SVG 容器） ===== */
+.chart{width:100%;overflow-x:auto}
+.chart svg{display:block;margin:0 auto}
+/* ===== 登录页 ===== */
+.login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(135deg,#eaf4f4 0%,#f7fafb 55%,#e8f1f5 100%);padding:30px}
+.login-box{width:392px;background:#fff;border:1px solid var(--line);border-radius:10px;
+  box-shadow:0 12px 40px rgba(24,47,56,.11);padding:32px 30px 26px}
+.login-box .lg{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+.login-box .lg .dot{width:32px;height:32px;border-radius:8px;background:var(--primary);color:#fff;
+  display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px}
+.login-box h1{font-size:17px;margin-bottom:3px}
+.login-box .pjt{font-size:12.5px;color:var(--txt-3);margin-bottom:22px}
+.login-box .fi{margin-bottom:15px}
+.login-box label{display:block;font-size:13px;color:var(--txt-2);margin-bottom:6px}
+.login-box input{width:100%;height:38px;font-size:14px}
+.login-box .btn-login{width:100%;height:38px;justify-content:center;font-size:14px;margin-top:4px}
+.login-foot{margin-top:20px;border-top:1px dashed var(--line);padding-top:12px;font-size:12px;
+  color:var(--txt-3);line-height:1.9}
+.errline{display:none;background:var(--danger-weak);border:1px solid #f2cfcf;color:#9c3434;
+  border-radius:5px;padding:8px 11px;font-size:12.5px;margin-bottom:14px}
+/* ===== index 评审入口 ===== */
+.index-wrap{max-width:1180px;margin:0 auto;padding:30px 22px 70px}
+.idx-hd{border-bottom:2px solid var(--primary);padding-bottom:16px;margin-bottom:22px}
+.idx-hd h1{font-size:23px;letter-spacing:-.3px}
+.idx-hd p{color:var(--txt-2);font-size:13.5px;margin-top:7px}
+.idx-hd .tags{margin-top:12px;display:flex;gap:7px;flex-wrap:wrap}
+.pgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:8px}
+.pcard{display:block;background:#fff;border:1px solid var(--line);border-radius:var(--radius);
+  padding:13px 14px;box-shadow:var(--shadow);color:var(--txt)}
+.pcard:hover{border-color:var(--primary);text-decoration:none;box-shadow:0 3px 12px rgba(27,95,217,.11)}
+.pcard .no{font-size:11.5px;color:var(--txt-3);font-family:var(--mono)}
+.pcard .nm{font-size:14px;font-weight:600;margin:3px 0 5px}
+.pcard .rt{font-family:var(--mono);font-size:11.5px;color:var(--primary);
+  background:var(--primary-weak);border-radius:3px;padding:1px 5px}
+.pcard .fp{font-size:11.5px;color:var(--txt-3);margin-top:7px;line-height:1.7}
+.st-cov{font-size:11.5px;color:var(--txt-2);margin-top:6px}
+.st-cov i{font-style:normal;color:var(--ok)}
+
+/* ===== 体验优化：焦点、导航和响应式布局 ===== */
+html{scroll-behavior:smooth}
+body{min-width:0;overflow-x:hidden}
+button,input,select,textarea{font:inherit}
+button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,
+textarea:focus-visible{outline:3px solid rgba(27,95,217,.28);outline-offset:2px}
+.skip-link{position:fixed;left:12px;top:-48px;z-index:300;background:var(--primary);
+  color:#fff;padding:9px 13px;border-radius:0 0 5px 5px;font-size:13px;transition:top .16s}
+.skip-link:focus{top:0;color:#fff;text-decoration:none}
+.brand{position:relative}
+.brand-copy{display:flex;flex-direction:column;min-width:0;line-height:1.25}
+.brand-copy b{font-size:14px;font-weight:700;white-space:nowrap}
+.brand-copy small{margin-left:0;white-space:nowrap}
+.sidebar-toggle,.mobile-nav-toggle{border:1px solid var(--line);background:#fff;color:var(--txt-2);
+  width:28px;height:28px;border-radius:5px;display:inline-flex;align-items:center;
+  justify-content:center;cursor:pointer;line-height:1}
+.sidebar-toggle{margin-left:auto;font-size:16px}
+.sidebar .sidebar-toggle{background:#f4fbfb;border-color:#b9d9d7;color:#33727a}
+.sidebar-toggle:hover,.mobile-nav-toggle:hover{border-color:var(--primary);color:var(--primary)}
+.mobile-nav-toggle{display:none;flex:0 0 auto;font-size:17px}
+.nav a{min-height:34px}
+.nav a .lbl{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.userbox .user-meta{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.nav-backdrop{display:none}
+.topbar{position:sticky;top:0;background:rgba(255,255,255,.96);backdrop-filter:blur(8px)}
+.content{scroll-margin-top:var(--topbar)}
+.toolbar .btn,.toolbar input,.toolbar select{min-height:32px}
+.btn,.pages span{transition:background-color .14s,border-color .14s,color .14s,transform .14s}
+.btn:active,.pages span:active{transform:translateY(1px)}
+.card-hd h3{line-height:1.45}
+.card:has(> table),.card:has(.tb){overflow-x:auto}
+.card:has(> table) .card-hd,.card:has(.tb) .card-hd{min-width:640px}
+.card:has(> table)>table,.card:has(.tb) table{min-width:640px}
+.sidebar-collapsed .sidebar{width:64px;flex-basis:64px}
+.sidebar-collapsed .brand{justify-content:center;padding:0}
+.sidebar-collapsed .brand-copy,.sidebar-collapsed .sidebar-toggle,
+.sidebar-collapsed .nav .grp,.sidebar-collapsed .nav .lbl,
+.sidebar-collapsed .nav .lock,.sidebar-collapsed .user-meta{display:none}
+.sidebar-collapsed .nav a{justify-content:center;padding-left:0;padding-right:0}
+.sidebar-collapsed .userbox{justify-content:center;padding-left:0;padding-right:0}
+.sidebar-collapsed .nav .ico{width:auto}
+@media (max-width:1120px){
+  .topbar{padding-left:16px;padding-right:16px}
+  .content{padding-left:16px;padding-right:16px}
+  .topbar .acts{gap:7px;font-size:12px}
+}
+@media (max-width:760px){
+  .app{display:block;min-height:100vh}
+  .sidebar{position:fixed;inset:0 auto 0 0;width:min(286px,86vw);flex:none;
+    transform:translateX(-102%);transition:transform .22s ease;box-shadow:0 12px 30px rgba(24,47,56,.18);z-index:120}
+  .brand{padding:0 16px;justify-content:flex-start}
+  .brand-copy,.sidebar-toggle,.nav .grp,.nav .lbl,.nav .lock,.user-meta{display:block}
+  .brand .sidebar-toggle{display:none}
+  .nav a{justify-content:flex-start;padding:8px 11px}
+  .nav .ico{width:15px}
+  .userbox{justify-content:flex-start;padding:11px 14px}
+  body.nav-open{overflow:hidden}
+  body.nav-open .sidebar{transform:none}
+  .nav-backdrop{position:fixed;inset:0;border:0;background:rgba(24,47,56,.38);z-index:110;cursor:pointer}
+  body.nav-open .nav-backdrop{display:block}
+  .mobile-nav-toggle{display:inline-flex}
+  .topbar{height:auto;min-height:var(--topbar);padding:9px 12px;align-items:center}
+  .crumb{display:flex;align-items:center;gap:7px;line-height:1.35}
+  .crumb b{font-size:14px;margin-right:0}
+  .topbar .acts{margin-left:auto}
+  .topbar .acts>span:not(.pbadge),.topbar .acts>.muted,.topbar .acts>a{display:none}
+  .content{padding:13px 12px 28px}
+  .toolbar{gap:7px}
+  .toolbar input[type=text],.toolbar input[type=password],.toolbar input[type=number],
+  .toolbar select,.toolbar .grow{width:100%;min-width:0;flex:1 1 100%}
+  .toolbar .btn{flex:0 0 auto}
+  .form-row{display:block}
+  .form-row>label{display:block;text-align:left;padding-top:0;margin-bottom:6px}
+  .login-wrap{padding:16px}
+  .index-wrap{padding:22px 14px 44px}
+  .idx-hd h1{font-size:20px}
+  .pgrid{grid-template-columns:1fr}
+}
+@media (max-width:560px){
+  .stats,.g2,.g3,.g4,.diff{grid-template-columns:1fr}
+  .card-hd{align-items:flex-start;padding:10px 12px}
+  .card-bd{padding:12px}
+  .card-hd .sub{display:block;margin-left:0;margin-top:2px}
+  .pages{width:100%;overflow-x:auto;padding-bottom:2px}
+  .pager{align-items:flex-start}
+  .steps{align-items:flex-start;flex-direction:column;gap:8px}
+  .step-line{width:1px;height:12px;flex:0 0 auto;margin:0 0 0 10px}
+  .msg .bub{max-width:88%}
+  .login-box{padding:26px 20px 22px}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;
+    animation-iteration-count:1!important;transition-duration:.01ms!important}
+}
+
+/* 兼容页面内少量历史内联色值，确保整套原型使用同一组色彩语义。 */
+[style*="#5b6673"]{color:var(--txt-2)!important}
+[style*="#98a2ae"]{color:var(--txt-3)!important}
+[style*="#e3e8ef"]{border-color:var(--line)!important}
+[style*="#eef2f7"]{background:var(--line-2)!important;border-color:var(--line-2)!important}
+[style*="#eaf1fd"]{background:var(--primary-weak)!important;color:var(--primary)!important}
+[style*="#1b5fd9"]{color:var(--primary)!important;fill:var(--primary)!important;stroke:var(--primary)!important}
+[style*="#1f9254"]{color:var(--ok)!important;fill:var(--ok)!important;stroke:var(--ok)!important}
+[style*="#b7791f"]{color:var(--warn)!important;fill:var(--warn)!important;stroke:var(--warn)!important}
+[style*="#d64545"]{color:var(--danger)!important;fill:var(--danger)!important;stroke:var(--danger)!important}
+svg [fill="#1b5fd9"]{fill:var(--primary)!important}
+svg [stroke="#1b5fd9"]{stroke:var(--primary)!important}
+svg [stroke="#e3e8ef"]{stroke:var(--line)!important}
+svg [stroke="#eef2f7"]{stroke:var(--line-2)!important}
+</style>
+</head>
+<body>
+<a class="skip-link" href="#main-content">跳到主要内容</a>
+<div class="app">
+<aside class="sidebar">
+<div class="brand"><span class="dot">才</span><span class="brand-copy"><b>AI 人才平台</b><small>一期原型</small></span><button class="sidebar-toggle" type="button" aria-label="收起导航" title="收起导航" onclick="document.body.classList.toggle('sidebar-collapsed')">‹</button></div>
+<nav class="nav" aria-label="主导航">
+<a href="p02-dashboard.html"><span class="ico" aria-hidden="true">◧</span><span class="lbl">工作台首页</span></a>
+<div class="grp">人才档案</div>
+<a href="p07-talent-list.html"><span class="ico" aria-hidden="true">▤</span><span class="lbl">人才档案列表</span></a>
+<a href="p12-talent-search.html"><span class="ico" aria-hidden="true">◎</span><span class="lbl">语义人才检索</span></a>
+<a href="p14-talent-ask.html"><span class="ico" aria-hidden="true">✦</span><span class="lbl">档案 RAG 问答</span></a>
+<a href="p09-talent-import.html"><span class="ico" aria-hidden="true">⇪</span><span class="lbl">批量导入</span></a>
+<a href="p10-talent-review.html"><span class="ico" aria-hidden="true">✎</span><span class="lbl">字段复核工作台</span></a>
+<a href="p11-talent-dedup.html"><span class="ico" aria-hidden="true">⧉</span><span class="lbl">重复档案合并</span></a>
+<a href="p13-tag-dict.html"><span class="ico" aria-hidden="true">☰</span><span class="lbl">标签字典</span></a>
+<a href="p15-my-profile.html"><span class="ico" aria-hidden="true">◔</span><span class="lbl">我的画像</span><span class="lock">🔒 本人</span></a>
+<div class="grp">AI 中台</div>
+<a href="p16-ai-model.html" class="active" aria-current="page"><span class="ico" aria-hidden="true">⚙</span><span class="lbl">模型与 Prompt</span><span class="lock">🔒 AIOPS</span></a>
+<a href="p17-ai-calllog.html"><span class="ico" aria-hidden="true">▦</span><span class="lbl">调用日志与成本</span><span class="lock">🔒 ADM/AIOPS</span></a>
+<a href="p18-agent-task.html"><span class="ico" aria-hidden="true">⚑</span><span class="lbl">Agent 任务与待办</span></a>
+<div class="grp">系统管理</div>
+<a href="p03-system-org.html"><span class="ico" aria-hidden="true">⌂</span><span class="lbl">组织架构</span><span class="lock">🔒 ADM/HR</span></a>
+<a href="p04-system-user.html"><span class="ico" aria-hidden="true">☺</span><span class="lbl">用户管理</span><span class="lock">🔒 ADM</span></a>
+<a href="p05-system-role.html"><span class="ico" aria-hidden="true">⛨</span><span class="lbl">角色与权限</span><span class="lock">🔒 ADM</span></a>
+<a href="p19-system-config.html"><span class="ico" aria-hidden="true">≡</span><span class="lbl">数据字典与配置</span><span class="lock">🔒 ADM</span></a>
+<a href="p06-system-audit.html"><span class="ico" aria-hidden="true">◫</span><span class="lbl">审计日志</span><span class="lock">🔒 ADM/AUDIT</span></a>
+</nav>
+<div class="userbox"><span class="avatar">张</span><span class="user-meta"><b>张敏</b><small>HR 管理员 · 人力资源部</small></span></div>
+</aside>
+  <button class="nav-backdrop" type="button" aria-label="关闭导航" onclick="document.body.classList.remove('nav-open')"></button>
+  <main class="main">
+    <div class="topbar">
+      <button class="mobile-nav-toggle" type="button" aria-label="打开导航" title="打开导航" onclick="document.body.classList.toggle('nav-open')">☰</button>
+      <div class="crumb"><b>模型配置与 Prompt 管理</b>/ AI 中台 / 模型与 Prompt</div>
+      <div class="acts">
+        <span class="pbadge">原型 P-16</span>
+        <span>数据域：全部</span><span class="muted">|</span><span>张敏（HR）</span>
+        <span class="muted">|</span><a href="p01-login.html">退出</a>
+      </div>
+    </div>
+    <div class="content" id="main-content" tabindex="-1">
+
+<div class="alert alert-warn"><span class="i">◈</span>
+  <div><b>混合算力路由（D-4）：</b>含个人隐私与高吞吐任务走<b>本地</b>（不出网）；
+  仅「档案问答生成」与「Agent 复杂推理」走<b>云端</b>，且<b>必须基于脱敏后的占位符片段</b>。<br>
+  本页仅 AIOPS 可访问，且<b>不含任何业务数据明文</b> —— 只做模型与 Prompt 配置。</div></div>
+
+<div class="toolbar">
+  <select><option selected>全部用途</option><option>本地推理</option><option>云端生成</option><option>向量化</option></select>
+  <button class="btn">刷新健康状态</button>
+  <span class="grow"></span>
+  <button class="btn">查看切换告警</button>
+  <button class="btn btn-primary">+ 新增模型配置</button>
+</div>
+
+<div class="card">
+  <div class="card-hd"><h3>模型配置与路由<span class="sub">TBL-23 · F-9.1</span></h3>
+    <span class="muted" style="font-size:12px">主模型失败自动切备用，切换耗时 ≤5s 并告警</span></div>
+  <table>
+    <thead><tr><th>用途</th><th>模型</th><th>部署</th><th>出网</th><th>主/备</th>
+      <th>健康</th><th>P95 延迟</th><th>操作</th></tr></thead>
+    <tbody>
+      <tr><td>简历字段抽取</td><td class="mono">qwen2.5:3b</td><td><span class="tag tag-gray">本地 Ollama</span></td>
+        <td><span class="tag tag-ok">否</span></td><td><span class="tag tag-info">主</span></td>
+        <td><span class="tag tag-ok">正常</span></td><td class="num">1.9s</td>
+        <td class="ops"><a href="#">编辑</a><a href="#">切换主备</a></td></tr>
+      <tr><td>Agent 复杂推理</td><td class="mono">qwen3:8b</td><td><span class="tag tag-gray">本地 Ollama</span></td>
+        <td><span class="tag tag-ok">否</span></td><td><span class="tag tag-gray">备</span></td>
+        <td><span class="tag tag-ok">正常</span></td><td class="num">4.4s</td>
+        <td class="ops"><a href="#">编辑</a><a href="#">切换主备</a></td></tr>
+      <tr><td>文本向量化</td><td class="mono">bge-m3</td><td><span class="tag tag-gray">本地</span></td>
+        <td><span class="tag tag-ok">否</span></td><td><span class="tag tag-info">主</span></td>
+        <td><span class="tag tag-ok">正常</span></td><td class="num">38ms</td>
+        <td class="ops"><a href="#">编辑</a></td></tr>
+      <tr><td>Rerank 精排</td><td class="mono">bge-reranker-v2-m3</td><td><span class="tag tag-gray">本地</span></td>
+        <td><span class="tag tag-ok">否</span></td><td><span class="tag tag-info">主</span></td>
+        <td><span class="tag tag-ok">正常</span></td><td class="num">96ms</td>
+        <td class="ops"><a href="#">编辑</a></td></tr>
+      <tr><td>档案问答生成</td><td class="mono">cloud-llm-a</td>
+        <td><span class="tag tag-warn">云端</span></td>
+        <td><span class="tag tag-danger">是（脱敏后）</span></td><td><span class="tag tag-info">主</span></td>
+        <td><span class="tag tag-warn">降级中</span></td><td class="num">2.1s</td>
+        <td class="ops"><a href="#">编辑</a><a href="#">切回主模型</a></td></tr>
+      <tr><td>档案问答生成</td><td class="mono">cloud-llm-b</td>
+        <td><span class="tag tag-warn">云端</span></td>
+        <td><span class="tag tag-danger">是（脱敏后）</span></td><td><span class="tag tag-ok">备用生效</span></td>
+        <td><span class="tag tag-ok">正常</span></td><td class="num">1.7s</td>
+        <td class="ops"><a href="#">编辑</a></td></tr>
+      <tr><td>问题改写 / 意图识别</td><td class="mono">qwen2.5:3b</td><td><span class="tag tag-gray">本地</span></td>
+        <td><span class="tag tag-ok">否</span></td><td><span class="tag tag-info">主</span></td>
+        <td><span class="tag tag-ok">正常</span></td><td class="num">220ms</td>
+        <td class="ops"><a href="#">编辑</a></td></tr>
+      <tr><td>出网前 NER 脱敏</td><td class="mono">本地 NER + 规则库</td><td><span class="tag tag-gray">本地</span></td>
+        <td><span class="tag tag-ok">否</span></td><td><span class="tag tag-info">主</span></td>
+        <td><span class="tag tag-ok">正常</span></td><td class="num">64ms</td>
+        <td class="ops"><a href="#">编辑</a></td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="card">
+  <div class="card-hd"><h3>Prompt 模板<span class="sub">TBL-23 · F-9.2 · 版本化 + 回滚</span></h3>
+    <button class="btn btn-sm btn-primary">+ 新建</button></div>
+  <table>
+    <thead><tr><th>Prompt 编码</th><th>用途</th><th>当前版本</th><th>最近变更</th><th>使用次数</th><th>操作</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">ASK_TALENT</td><td>档案 RAG 问答</td><td><span class="tag tag-ok">v3</span></td>
+        <td class="muted">09-20 14:02 · 王强</td><td class="num">3,412</td>
+        <td class="ops"><a href="#pv">版本对比<span class="mark">①</span></a><a href="#">回滚</a></td></tr>
+      <tr><td class="mono">PARSE_RESUME</td><td>简历字段抽取</td><td><span class="tag tag-ok">v7</span></td>
+        <td class="muted">09-14 10:31 · 李工</td><td class="num">18,904</td>
+        <td class="ops"><a href="#pv">版本对比</a><a href="#">回滚</a></td></tr>
+      <tr><td class="mono">QUERY_REWRITE</td><td>问题改写 / 指代消解</td><td><span class="tag tag-ok">v2</span></td>
+        <td class="muted">08-28 16:47 · 李工</td><td class="num">6,120</td>
+        <td class="ops"><a href="#pv">版本对比</a><a href="#">回滚</a></td></tr>
+      <tr><td class="mono">TAG_SUGGEST</td><td>标签建议（入待审核）</td><td><span class="tag tag-gray">v1 草稿</span></td>
+        <td class="muted">09-21 11:20 · 张敏</td><td class="num">42</td>
+        <td class="ops"><a href="#">编辑</a><a href="#">启用</a></td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="card" id="pv">
+  <div class="card-hd"><h3>版本对比 · ASK_TALENT<span class="sub">v2 → v3</span></h3>
+    <button class="btn btn-sm">回滚到 v2</button></div>
+  <div class="card-bd">
+    <div class="diff">
+      <div><h5><span>v2（2026-08-11）</span><span class="muted">已停用</span></h5>
+        <p>你是人才档案分析助手。请依据提供的档案片段回答问题。</p>
+        <p class="muted">要求：回答简洁，不超过 200 字。</p></div>
+      <div><h5><span>v3（2026-09-20 · 当前）</span><span class="tag tag-ok">启用中</span></h5>
+        <p>你是人才档案分析助手。请<b>仅依据</b>提供的档案片段回答问题。</p>
+        <p class="hl-ok">每条结论必须标注引用序号，格式如「…（引用 1）」。<br>
+        若片段中无相关依据，必须回答「档案中未找到依据」，<b>不得推测或补全</b>。</p>
+        <p class="muted">片段中的 <span class="ph">{{CANDIDATE}}</span> 等占位符请按原样保留，不要改写。</p></div>
+    </div>
+    <div class="alert alert-info" style="margin:14px 0 0"><span class="i">◈</span>
+      <div>每次调用记录所用 <span class="mono">prompt_code + prompt_version</span>（落 TBL-24），
+      保证任何一次回答都能回溯到当时的确切 Prompt —— 这是"回答质量变化"能被归因的前提。</div></div>
+  </div>
+</div>
+<div class="state-box"><header>&lt;!-- STATE: loading — 模型表与 Prompt 表骨架屏 --&gt;</header><div class="body"><div class="skeleton" style="width:34%"></div><div class="skeleton" style="width:82%"></div><div class="skeleton" style="width:68%"></div><div class="skeleton" style="width:74%"></div><div class="skeleton" style="width:52%"></div></div></div>
+<div class="state-box"><header>&lt;!-- STATE: alert — 主模型熔断，备用模型已接管 --&gt;</header><div class="body"><div class="alert alert-warn" style="margin:0"><span class="i">◈</span><div><b>cloud-llm-a 连续 3 次超时，已自动切换至 cloud-llm-b</b><br>切换耗时 3.2s（要求 ≤5s）· 切换事件已告警 · 原模型恢复后需手工切回或按策略自动切回</div></div></div></div>
+<div class="state-box"><header>&lt;!-- STATE: error — 模型全部不可用（降级返回兜底，不抛 500） --&gt;</header><div class="body"><div class="alert alert-danger" style="margin:0"><span class="i">!</span><div><b>云端生成模型全部不可用</b><br>业务侧将返回 HTTP 200 + <span class="mono">code=0, degraded=true</span> + 兜底文案，<b>不抛 500</b> —— 否则前端无法区分业务失败与服务降级。</div></div></div></div>
+<div class="state-box"><header>&lt;!-- STATE: forbidden — 非 AIOPS 不可访问模型与 Prompt 配置 --&gt;</header><div class="body"><div class="state-wrap"><div class="big">🔒</div><h4>无访问权限</h4><p>当前角色「HR 管理员」不可访问模型与 Prompt 配置；如需查看调用成本请走「调用日志与成本看板」</p><button class="btn">返回工作台</button></div></div></div><div class="legend"><b>对应：</b>F-9.1 / F-9.2 / F-1.6 · API-81~87 · TBL-23　·　<b>状态：</b>默认 / 加载 / 熔断告警 / 全不可用 / 无权限　·　<b>红线：</b>Prompt 版本化（改 = 生成新版本，不改历史）；每次调用记录版本号；云端调用必须脱敏　·　<b>注意：</b>AIOPS 看不到任何业务数据明文 —— 本页不含档案内容</div>
+    </div>
+  </main>
+</div>
+</body>
+</html>

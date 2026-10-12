@@ -1,0 +1,54 @@
+# ============================================================================
+# 2026 顶配版 AI 数字化人才平台 · 后端依赖（一期）
+# 依据：架构设计文档 §2.2 关键组件选型表 / §7 部署拓扑
+# 安装：.venv/Scripts/python.exe -m pip install -r backend/requirements.txt
+#
+# ⚠️ 分批启用：N4（向量画像）追加 pymilvus；N5（检索问答）追加 langchain 系；
+#    一期 N1 应用基座不需要它们，故此处不引入（保持环境轻净）。
+# ============================================================================
+
+# ---------- Web 框架 ----------
+fastapi>=0.115.0
+uvicorn[standard]>=0.32.0
+python-multipart>=0.0.12          # 文件上传（API-36 批量导入，N2 启用）
+
+# ---------- 数据校验与配置 ----------
+pydantic>=2.9.0
+pydantic-settings>=2.6.0
+
+# ---------- 表格解析（API-17 批量导入用户，CU-06 启用）----------
+# 只装 openpyxl（xlsx 读写），**不引入 pandas** —— 导入模板是几十行的小表，
+# pandas 会连带 numpy 一起进来（几十 MB），为了读 7 列数据不值当。
+openpyxl>=3.1.0
+
+# ---------- 文档文本层抽取（CU-15 文本层抽取，A1，批次 20）----------
+# PDF 文字层读取（文本型简历/文档直接抽文字，免去 OCR 依赖）；
+# docx 走零依赖 zipfile + xml 解析（见 app/agents/parse_graph._read_docx_text），不引入 python-docx。
+pypdf>=4.0.0
+
+# ---------- DS-1 MySQL + ORM（架构 ADR：ORM + Alembic 为唯一事实来源）----------
+SQLAlchemy>=2.0.30
+alembic>=1.13.0
+PyMySQL>=1.1.0
+cryptography>=43.0.0             # PyMySQL caching_sha2_password 认证 + 敏感字段 AES
+
+# ---------- DS-3 Redis（会话 / 限流 / 幂等 / 队列 / Agent 短期记忆）----------
+redis>=5.0.0
+
+# ---------- 认证与安全 ----------
+PyJWT>=2.9.0
+bcrypt>=4.2.0
+
+# ---------- JSON ----------
+# 说明：FastAPI ≥0.13x 对带 response_model 的接口会**直接用 Pydantic 序列化为 JSON 字节**，
+# 已弃用 ORJSONResponse。本项目的统一响应走 response_model，故 orjson 仅作保留依赖
+# （后续批量文件解析 / 大 JSON 落盘可直接用它），**不参与接口响应链路**。
+orjson>=3.10.0
+
+# ---------- 外部集成（N1+ 逐步启用）----------
+httpx>=0.27.0                    # 本地模型 / Reranker / Dify 云通道
+minio>=7.2.0                     # DS-4 对象存储
+
+# ---------- 开发与测试 ----------
+pytest>=8.2.0
+pytest-asyncio>=0.24.0

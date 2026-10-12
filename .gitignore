@@ -1,0 +1,79 @@
+# ============================================================
+# 2026 顶配版 AI 数字化人才平台 · Git 忽略规则
+# 维护约定：新增「生成物 / 依赖 / 运行时数据 / 机密」时同步补本文件
+# ============================================================
+
+# ---------- 机密 / 环境配置（绝不入库） ----------
+# ⚠️ 本机 .env 含数据库口令与模型密钥；只入库 .env.example
+.env
+.env.*
+!.env.example
+*.env.bak.*
+*.pem
+*.key
+*.p12
+*.pfx
+secrets/
+
+# ---------- Python ----------
+# ⚠️ 「env/」不整体忽略：cloud-package/env/ 是需入库的配置样例目录
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+build/
+dist/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+
+# ---------- Node / 前端 ----------
+node_modules/
+frontend/dist/
+frontend/.vite/
+.vite/
+*.local
+.eslintcache
+.npm/
+.pnpm-store/
+# ⚠️ 锁文件必须入库（保证可复现构建），不得忽略
+!package-lock.json
+!pnpm-lock.yaml
+!yarn.lock
+
+# ---------- 运行时数据 / 产物（含个人隐私，绝不入库） ----------
+backend/logs/
+backend/tmp/
+backend/data/uploads/
+**/data/uploads/
+logs/
+tmp/
+*.log
+!logs/.gitkeep
+
+# ---------- 测试与静态检查产物 ----------
+junit*.xml
+.juni?*.xml
+.*junit*.xml
+*.junit*.xml
+pytest-report.xml
+
+# ---------- IDE / 编辑器 ----------
+.idea/
+.vscode/
+*.iml
+*.swp
+*.swo
+*~
+
+# ---------- 操作系统 ----------
+.DS_Store
+Thumbs.db
+desktop.ini

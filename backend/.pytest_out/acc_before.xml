@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="2" skipped="0" tests="2" time="6.939" timestamp="2026-09-24T09:42:35.051757+08:00" hostname="DESKTOP-DKO2LI9"><testcase classname="tests.test_import_accounting" name="test_success_path_persists_counts_and_talent" time="3.357"><failure message="AssertionError: 成功文件必须计入 success_count（旧缺陷：恒 0）&#10;assert 0 == 1&#10; +  where 0 = int(0)&#10; +    where 0 = &lt;ImportTask 'IMP20260924001' status=2 0/1&gt;.success_count">acc_env = {'tenant_id': 361447314952425472, 'user_id': 361447317582254080}
+
+    def test_success_path_persists_counts_and_talent(acc_env) -&gt; None:
+        """成功解析一份文本型简历 ⇒ success_count=1 / fail_count=0 / COMPLETED，且文件行=SUCCESS。
+    
+        旧缺陷下这里会看到 ``success_count=0, fail_count=0, status=COMPLETED``：
+        任务说「已完成」，却一个成功文件都没有（前端「已完成 / 0 / 0」）。
+        """
+        tid = acc_env["tenant_id"]
+        task_id = _run_sync_import(
+            acc_env, [("张三简历.docx", _docx_bytes("姓名：张三 电话 13812348888 学历：本科"))]
+        )
+        task, files = _task_row(tid, task_id)
+    
+        assert len(files) == 1
+        file_row = files[0]
+        assert int(file_row.parse_status) == int(ImportFileParseStatus.SUCCESS), (
+            f"文件状态未按 SUCCESS 落库：parse_status={int(file_row.parse_status)} "
+            f"parse_error={file_row.parse_error!r}"
+        )
+        assert file_row.talent_id is not None, "成功解析必须写入 resume_id → talent_id 映射"
+&gt;       assert int(task.success_count) == 1, "成功文件必须计入 success_count（旧缺陷：恒 0）"
+E       AssertionError: 成功文件必须计入 success_count（旧缺陷：恒 0）
+E       assert 0 == 1
+E        +  where 0 = int(0)
+E        +    where 0 = &lt;ImportTask 'IMP20260924001' status=2 0/1&gt;.success_count
+
+tests\test_import_accounting.py:179: AssertionError</failure></testcase><testcase classname="tests.test_import_accounting" name="test_failure_path_counts_are_not_zero" time="2.658"><failure message="AssertionError: 失败文件必须计入 fail_count（旧缺陷：恒 0 → 「已完成/0/0」）&#10;assert 0 == 1&#10; +  where 0 = int(0)&#10; +    where 0 = &lt;ImportTask 'IMP20260924001' status=2 0/1&gt;.fail_count">acc_env = {'tenant_id': 361447331993882624, 'user_id': 361447334820843520}
+
+    def test_failure_path_counts_are_not_zero(acc_env) -&gt; None:
+        """抽不到姓名 ⇒ 整份不进空档案（设计如此），但**任务账目必须记上这一份失败**。
+    
+        文件名故意不带中文姓名（``resume-v2.docx``）：否则「文件名兜底」会把姓名补上。
+        """
+        tid = acc_env["tenant_id"]
+        task_id = _run_sync_import(
+            acc_env, [("resume-v2.docx", _docx_bytes("电话 13812348888 邮箱 a@b.com"))]
+        )
+        task, files = _task_row(tid, task_id)
+    
+        assert len(files) == 1
+        assert int(files[0].parse_status) == int(ImportFileParseStatus.FAILED)
+&gt;       assert int(task.fail_count) == 1, "失败文件必须计入 fail_count（旧缺陷：恒 0 → 「已完成/0/0」）"
+E       AssertionError: 失败文件必须计入 fail_count（旧缺陷：恒 0 → 「已完成/0/0」）
+E       assert 0 == 1
+E        +  where 0 = int(0)
+E        +    where 0 = &lt;ImportTask 'IMP20260924001' status=2 0/1&gt;.fail_count
+
+tests\test_import_accounting.py:206: AssertionError</failure></testcase></testsuite></testsuites>

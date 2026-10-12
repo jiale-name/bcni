@@ -1,0 +1,830 @@
+.............FF......F.F.FFF...........                                  [100%]
+================================== FAILURES ===================================
+______________________ test_primary_success_no_fallback _______________________
+
+    def test_primary_success_no_fallback() -> None:
+        """**反向对照**：主路正常时不得标记 ``fallback_used``（否则「有无降级」失去意义）。"""
+        gateway, client = _gateway(lambda url, body, n: _ok_generate("primary"))
+>       result = gateway.call([_target("primary"), _target("backup", priority=2)], prompt="hi")
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_ai_gateway.py:186: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <app.core.model_gateway.ModelGateway object at 0x000002BF2A5CB250>
+targets = [ModelTarget(id=5773, scene='resume_parse', model_code='primary', display_name='primary', provider='ollama', deploymen...ries=0, breaker_threshold=3, breaker_cooldown_seconds=60, price_in_per_1k=Decimal('0'), price_out_per_1k=Decimal('0'))]
+prompt = 'hi', texts = None, query = None, documents = None, system = None
+
+    def call(
+        self,
+        targets: list[ModelTarget],
+        *,
+        prompt: str | None = None,
+        texts: list[str] | None = None,
+        query: str | None = None,
+        documents: list[str] | None = None,
+        system: str | None = None,
+    ) -> GatewayCallResult:
+        """按 ``targets`` 的顺序（= ``priority`` 升序）依次尝试，返回**第一个成功的结果**。
+    
+        :param targets: 已按 ``priority`` 排好序的备选链；空列表 → 直接降级
+        :param prompt: ``generate`` 的提示词
+        :param texts: ``embed`` 的待向量化文本
+        :param query: ``rerank`` 的查询
+        :param documents: ``rerank`` 的候选文档
+        :raises: **不抛任何异常**（见模块 docstring ①）
+    
+        🔴 ``prompt`` / ``texts`` / ``documents`` 里可能含**已脱敏的占位符**
+        （ADR-4：出网只送脱敏片段）—— 网关**不做脱敏**，它只负责搬运。
+        脱敏是调用方（``MaskService``）的责任，网关擅自「顺带脱敏」会让
+        「本地调用也被替换成占位符」，那是错的（本地不出网，无需脱敏）。
+        """
+        started = time.perf_counter()
+        attempts: list[Attempt] = []
+    
+        if not targets:
+            return GatewayCallResult(
+                ok=False,
+                kind="generate",
+                attempts=attempts,
+                degraded=True,
+                degraded_reason="没有可用的模型配置（该场景下无启用中的模型）",
+                error_code=str(int(ErrorCode.AI_DEGRADED)),
+                error_msg="AI 服务降级：无可用模型配置",
+            )
+    
+        kind = kind_of_scene(targets[0].scene)
+        first_priority = min(t.priority for t in targets)
+        last_error_code: str | None = None
+        last_error_msg: str | None = None
+    
+        for target in targets:
+            # ---- 熔断跳过（fail-open：Redis 不可用时 is_open 恒为 False）----
+            if CircuitBreaker.is_open(self.tenant_id, target):
+                attempts.append(
+                    Attempt(
+                        model_code=target.model_code,
+                        model_name=target.model_name,
+                        provider=target.provider,
+                        ok=False,
+                        latency_ms=0,
+                        skipped=True,
+                        skip_reason="熔断冷却中，跳过",
+                    )
+                )
+                last_error_code = str(int(ErrorCode.AI_DEGRADED))
+                last_error_msg = "主备链上已有模型处于熔断冷却期"
+                continue
+    
+            result = self._call_with_retry(
+                target, kind=kind, prompt=prompt, texts=texts, query=query, documents=documents,
+                system=system,
+            )
+            attempts.append(
+                Attempt(
+                    model_code=target.model_code,
+                    model_name=target.model_name,
+                    provider=target.provider,
+                    ok=result["ok"],
+                    latency_ms=result["latency_ms"],
+                    error_code=result["error_code"],
+                    error=result["error"],
+                )
+            )
+    
+            if result["ok"]:
+                CircuitBreaker.record_success(self.tenant_id, target)
+                return GatewayCallResult(
+                    ok=True,
+                    kind=kind,
+                    content=result["content"],
+>                   vectors=result["vectors"],
+                            ^^^^^^^^^^^^^^^^^
+                    scores=result["scores"],
+                    tokens_in=result["tokens_in"],
+                    tokens_out=result["tokens_out"],
+                    latency_ms=result["latency_ms"],
+                    first_token_ms=result["first_token_ms"],
+                    target=target,
+                    fallback_used=target.priority > first_priority,
+                    attempts=attempts,
+                )
+E               KeyError: 'vectors'
+
+app\core\model_gateway.py:409: KeyError
+__________________ test_primary_failure_falls_back_to_backup __________________
+
+    def test_primary_failure_falls_back_to_backup() -> None:
+        """🔴 AC-33：主路失败 → 自动落备路，且 ``fallback_used=True``、``target`` 是备路。"""
+        def handler(url: str, body: dict[str, Any], n: int) -> _FakeResponse:
+            if "fake-primary" in url:
+                return _FakeResponse(500, text="boom")
+            return _ok_generate("backup")
+    
+        gateway, client = _gateway(handler)
+>       result = gateway.call([_target("primary"), _target("backup", priority=2)], prompt="hi")
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_ai_gateway.py:205: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <app.core.model_gateway.ModelGateway object at 0x000002BF2A5CBD90>
+targets = [ModelTarget(id=5773, scene='resume_parse', model_code='primary', display_name='primary', provider='ollama', deploymen...ries=0, breaker_threshold=3, breaker_cooldown_seconds=60, price_in_per_1k=Decimal('0'), price_out_per_1k=Decimal('0'))]
+prompt = 'hi', texts = None, query = None, documents = None, system = None
+
+    def call(
+        self,
+        targets: list[ModelTarget],
+        *,
+        prompt: str | None = None,
+        texts: list[str] | None = None,
+        query: str | None = None,
+        documents: list[str] | None = None,
+        system: str | None = None,
+    ) -> GatewayCallResult:
+        """按 ``targets`` 的顺序（= ``priority`` 升序）依次尝试，返回**第一个成功的结果**。
+    
+        :param targets: 已按 ``priority`` 排好序的备选链；空列表 → 直接降级
+        :param prompt: ``generate`` 的提示词
+        :param texts: ``embed`` 的待向量化文本
+        :param query: ``rerank`` 的查询
+        :param documents: ``rerank`` 的候选文档
+        :raises: **不抛任何异常**（见模块 docstring ①）
+    
+        🔴 ``prompt`` / ``texts`` / ``documents`` 里可能含**已脱敏的占位符**
+        （ADR-4：出网只送脱敏片段）—— 网关**不做脱敏**，它只负责搬运。
+        脱敏是调用方（``MaskService``）的责任，网关擅自「顺带脱敏」会让
+        「本地调用也被替换成占位符」，那是错的（本地不出网，无需脱敏）。
+        """
+        started = time.perf_counter()
+        attempts: list[Attempt] = []
+    
+        if not targets:
+            return GatewayCallResult(
+                ok=False,
+                kind="generate",
+                attempts=attempts,
+                degraded=True,
+                degraded_reason="没有可用的模型配置（该场景下无启用中的模型）",
+                error_code=str(int(ErrorCode.AI_DEGRADED)),
+                error_msg="AI 服务降级：无可用模型配置",
+            )
+    
+        kind = kind_of_scene(targets[0].scene)
+        first_priority = min(t.priority for t in targets)
+        last_error_code: str | None = None
+        last_error_msg: str | None = None
+    
+        for target in targets:
+            # ---- 熔断跳过（fail-open：Redis 不可用时 is_open 恒为 False）----
+            if CircuitBreaker.is_open(self.tenant_id, target):
+                attempts.append(
+                    Attempt(
+                        model_code=target.model_code,
+                        model_name=target.model_name,
+                        provider=target.provider,
+                        ok=False,
+                        latency_ms=0,
+                        skipped=True,
+                        skip_reason="熔断冷却中，跳过",
+                    )
+                )
+                last_error_code = str(int(ErrorCode.AI_DEGRADED))
+                last_error_msg = "主备链上已有模型处于熔断冷却期"
+                continue
+    
+            result = self._call_with_retry(
+                target, kind=kind, prompt=prompt, texts=texts, query=query, documents=documents,
+                system=system,
+            )
+            attempts.append(
+                Attempt(
+                    model_code=target.model_code,
+                    model_name=target.model_name,
+                    provider=target.provider,
+                    ok=result["ok"],
+                    latency_ms=result["latency_ms"],
+                    error_code=result["error_code"],
+                    error=result["error"],
+                )
+            )
+    
+            if result["ok"]:
+                CircuitBreaker.record_success(self.tenant_id, target)
+                return GatewayCallResult(
+                    ok=True,
+                    kind=kind,
+                    content=result["content"],
+>                   vectors=result["vectors"],
+                            ^^^^^^^^^^^^^^^^^
+                    scores=result["scores"],
+                    tokens_in=result["tokens_in"],
+                    tokens_out=result["tokens_out"],
+                    latency_ms=result["latency_ms"],
+                    first_token_ms=result["first_token_ms"],
+                    target=target,
+                    fallback_used=target.priority > first_priority,
+                    attempts=attempts,
+                )
+E               KeyError: 'vectors'
+
+app\core\model_gateway.py:409: KeyError
+------------------------------ Captured log call ------------------------------
+WARNING  app.core.model_gateway:model_gateway.py:423 模型调用失败，尝试下一路 [resume_parse/primary] model=qwen2.5:3b error=HTTP 500: boom
+____________________ test_5xx_then_success_within_retries _____________________
+
+    def test_5xx_then_success_within_retries() -> None:
+        """重试真的能救回来（第三次成功）。"""
+        def handler(url: str, body: dict[str, Any], n: int) -> _FakeResponse:
+            return _FakeResponse(503, text="warming up") if n < 2 else _ok_generate()
+    
+        gateway, client = _gateway(handler)
+>       result = gateway.call([_target("warming", max_retries=2)], prompt="hi")
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_ai_gateway.py:294: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <app.core.model_gateway.ModelGateway object at 0x000002BF2A6A1350>
+targets = [ModelTarget(id=7238, scene='resume_parse', model_code='warming', display_name='warming', provider='ollama', deploymen...ries=2, breaker_threshold=3, breaker_cooldown_seconds=60, price_in_per_1k=Decimal('0'), price_out_per_1k=Decimal('0'))]
+prompt = 'hi', texts = None, query = None, documents = None, system = None
+
+    def call(
+        self,
+        targets: list[ModelTarget],
+        *,
+        prompt: str | None = None,
+        texts: list[str] | None = None,
+        query: str | None = None,
+        documents: list[str] | None = None,
+        system: str | None = None,
+    ) -> GatewayCallResult:
+        """按 ``targets`` 的顺序（= ``priority`` 升序）依次尝试，返回**第一个成功的结果**。
+    
+        :param targets: 已按 ``priority`` 排好序的备选链；空列表 → 直接降级
+        :param prompt: ``generate`` 的提示词
+        :param texts: ``embed`` 的待向量化文本
+        :param query: ``rerank`` 的查询
+        :param documents: ``rerank`` 的候选文档
+        :raises: **不抛任何异常**（见模块 docstring ①）
+    
+        🔴 ``prompt`` / ``texts`` / ``documents`` 里可能含**已脱敏的占位符**
+        （ADR-4：出网只送脱敏片段）—— 网关**不做脱敏**，它只负责搬运。
+        脱敏是调用方（``MaskService``）的责任，网关擅自「顺带脱敏」会让
+        「本地调用也被替换成占位符」，那是错的（本地不出网，无需脱敏）。
+        """
+        started = time.perf_counter()
+        attempts: list[Attempt] = []
+    
+        if not targets:
+            return GatewayCallResult(
+                ok=False,
+                kind="generate",
+                attempts=attempts,
+                degraded=True,
+                degraded_reason="没有可用的模型配置（该场景下无启用中的模型）",
+                error_code=str(int(ErrorCode.AI_DEGRADED)),
+                error_msg="AI 服务降级：无可用模型配置",
+            )
+    
+        kind = kind_of_scene(targets[0].scene)
+        first_priority = min(t.priority for t in targets)
+        last_error_code: str | None = None
+        last_error_msg: str | None = None
+    
+        for target in targets:
+            # ---- 熔断跳过（fail-open：Redis 不可用时 is_open 恒为 False）----
+            if CircuitBreaker.is_open(self.tenant_id, target):
+                attempts.append(
+                    Attempt(
+                        model_code=target.model_code,
+                        model_name=target.model_name,
+                        provider=target.provider,
+                        ok=False,
+                        latency_ms=0,
+                        skipped=True,
+                        skip_reason="熔断冷却中，跳过",
+                    )
+                )
+                last_error_code = str(int(ErrorCode.AI_DEGRADED))
+                last_error_msg = "主备链上已有模型处于熔断冷却期"
+                continue
+    
+            result = self._call_with_retry(
+                target, kind=kind, prompt=prompt, texts=texts, query=query, documents=documents,
+                system=system,
+            )
+            attempts.append(
+                Attempt(
+                    model_code=target.model_code,
+                    model_name=target.model_name,
+                    provider=target.provider,
+                    ok=result["ok"],
+                    latency_ms=result["latency_ms"],
+                    error_code=result["error_code"],
+                    error=result["error"],
+                )
+            )
+    
+            if result["ok"]:
+                CircuitBreaker.record_success(self.tenant_id, target)
+                return GatewayCallResult(
+                    ok=True,
+                    kind=kind,
+                    content=result["content"],
+>                   vectors=result["vectors"],
+                            ^^^^^^^^^^^^^^^^^
+                    scores=result["scores"],
+                    tokens_in=result["tokens_in"],
+                    tokens_out=result["tokens_out"],
+                    latency_ms=result["latency_ms"],
+                    first_token_ms=result["first_token_ms"],
+                    target=target,
+                    fallback_used=target.priority > first_priority,
+                    attempts=attempts,
+                )
+E               KeyError: 'vectors'
+
+app\core\model_gateway.py:409: KeyError
+____________________ test_openai_style_response_is_parsed _____________________
+
+    def test_openai_style_response_is_parsed() -> None:
+        """OpenAI 兼容形状（``choices[0].message.content`` + ``usage``）也要能解析。"""
+        payload = {
+            "choices": [{"message": {"content": "来自云端"}}],
+            "usage": {"prompt_tokens": 100, "completion_tokens": 20},
+        }
+        gateway, _client = _gateway(
+            lambda url, body, n: _FakeResponse(200, payload)
+        )
+>       result = gateway.call([_target("cloud", provider="openai", deployment="cloud")], prompt="hi")
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_ai_gateway.py:328: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <app.core.model_gateway.ModelGateway object at 0x000002BF2A6BA300>
+targets = [ModelTarget(id=9266, scene='resume_parse', model_code='cloud', display_name='cloud', provider='openai', deployment='c...ries=0, breaker_threshold=3, breaker_cooldown_seconds=60, price_in_per_1k=Decimal('0'), price_out_per_1k=Decimal('0'))]
+prompt = 'hi', texts = None, query = None, documents = None, system = None
+
+    def call(
+        self,
+        targets: list[ModelTarget],
+        *,
+        prompt: str | None = None,
+        texts: list[str] | None = None,
+        query: str | None = None,
+        documents: list[str] | None = None,
+        system: str | None = None,
+    ) -> GatewayCallResult:
+        """按 ``targets`` 的顺序（= ``priority`` 升序）依次尝试，返回**第一个成功的结果**。
+    
+        :param targets: 已按 ``priority`` 排好序的备选链；空列表 → 直接降级
+        :param prompt: ``generate`` 的提示词
+        :param texts: ``embed`` 的待向量化文本
+        :param query: ``rerank`` 的查询
+        :param documents: ``rerank`` 的候选文档
+        :raises: **不抛任何异常**（见模块 docstring ①）
+    
+        🔴 ``prompt`` / ``texts`` / ``documents`` 里可能含**已脱敏的占位符**
+        （ADR-4：出网只送脱敏片段）—— 网关**不做脱敏**，它只负责搬运。
+        脱敏是调用方（``MaskService``）的责任，网关擅自「顺带脱敏」会让
+        「本地调用也被替换成占位符」，那是错的（本地不出网，无需脱敏）。
+        """
+        started = time.perf_counter()
+        attempts: list[Attempt] = []
+    
+        if not targets:
+            return GatewayCallResult(
+                ok=False,
+                kind="generate",
+                attempts=attempts,
+                degraded=True,
+                degraded_reason="没有可用的模型配置（该场景下无启用中的模型）",
+                error_code=str(int(ErrorCode.AI_DEGRADED)),
+                error_msg="AI 服务降级：无可用模型配置",
+            )
+    
+        kind = kind_of_scene(targets[0].scene)
+        first_priority = min(t.priority for t in targets)
+        last_error_code: str | None = None
+        last_error_msg: str | None = None
+    
+        for target in targets:
+            # ---- 熔断跳过（fail-open：Redis 不可用时 is_open 恒为 False）----
+            if CircuitBreaker.is_open(self.tenant_id, target):
+                attempts.append(
+                    Attempt(
+                        model_code=target.model_code,
+                        model_name=target.model_name,
+                        provider=target.provider,
+                        ok=False,
+                        latency_ms=0,
+                        skipped=True,
+                        skip_reason="熔断冷却中，跳过",
+                    )
+                )
+                last_error_code = str(int(ErrorCode.AI_DEGRADED))
+                last_error_msg = "主备链上已有模型处于熔断冷却期"
+                continue
+    
+            result = self._call_with_retry(
+                target, kind=kind, prompt=prompt, texts=texts, query=query, documents=documents,
+                system=system,
+            )
+            attempts.append(
+                Attempt(
+                    model_code=target.model_code,
+                    model_name=target.model_name,
+                    provider=target.provider,
+                    ok=result["ok"],
+                    latency_ms=result["latency_ms"],
+                    error_code=result["error_code"],
+                    error=result["error"],
+                )
+            )
+    
+            if result["ok"]:
+                CircuitBreaker.record_success(self.tenant_id, target)
+                return GatewayCallResult(
+                    ok=True,
+                    kind=kind,
+                    content=result["content"],
+>                   vectors=result["vectors"],
+                            ^^^^^^^^^^^^^^^^^
+                    scores=result["scores"],
+                    tokens_in=result["tokens_in"],
+                    tokens_out=result["tokens_out"],
+                    latency_ms=result["latency_ms"],
+                    first_token_ms=result["first_token_ms"],
+                    target=target,
+                    fallback_used=target.priority > first_priority,
+                    attempts=attempts,
+                )
+E               KeyError: 'vectors'
+
+app\core\model_gateway.py:409: KeyError
+__________________________ test_embed_parses_vectors __________________________
+
+    def test_embed_parses_vectors() -> None:
+        payload = {"embeddings": [[0.1, 0.2], [0.3, 0.4]], "prompt_eval_count": 7}
+        gateway, _client = _gateway(lambda url, body, n: _FakeResponse(200, payload))
+>       result = gateway.call([_target("e", scene="embedding")], texts=["a", "b"])
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_ai_gateway.py:348: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <app.core.model_gateway.ModelGateway object at 0x000002BF2A69A5F0>
+targets = [ModelTarget(id=4189, scene='embedding', model_code='e', display_name='e', provider='ollama', deployment='local', base...ries=0, breaker_threshold=3, breaker_cooldown_seconds=60, price_in_per_1k=Decimal('0'), price_out_per_1k=Decimal('0'))]
+prompt = None, texts = ['a', 'b'], query = None, documents = None, system = None
+
+    def call(
+        self,
+        targets: list[ModelTarget],
+        *,
+        prompt: str | None = None,
+        texts: list[str] | None = None,
+        query: str | None = None,
+        documents: list[str] | None = None,
+        system: str | None = None,
+    ) -> GatewayCallResult:
+        """按 ``targets`` 的顺序（= ``priority`` 升序）依次尝试，返回**第一个成功的结果**。
+    
+        :param targets: 已按 ``priority`` 排好序的备选链；空列表 → 直接降级
+        :param prompt: ``generate`` 的提示词
+        :param texts: ``embed`` 的待向量化文本
+        :param query: ``rerank`` 的查询
+        :param documents: ``rerank`` 的候选文档
+        :raises: **不抛任何异常**（见模块 docstring ①）
+    
+        🔴 ``prompt`` / ``texts`` / ``documents`` 里可能含**已脱敏的占位符**
+        （ADR-4：出网只送脱敏片段）—— 网关**不做脱敏**，它只负责搬运。
+        脱敏是调用方（``MaskService``）的责任，网关擅自「顺带脱敏」会让
+        「本地调用也被替换成占位符」，那是错的（本地不出网，无需脱敏）。
+        """
+        started = time.perf_counter()
+        attempts: list[Attempt] = []
+    
+        if not targets:
+            return GatewayCallResult(
+                ok=False,
+                kind="generate",
+                attempts=attempts,
+                degraded=True,
+                degraded_reason="没有可用的模型配置（该场景下无启用中的模型）",
+                error_code=str(int(ErrorCode.AI_DEGRADED)),
+                error_msg="AI 服务降级：无可用模型配置",
+            )
+    
+        kind = kind_of_scene(targets[0].scene)
+        first_priority = min(t.priority for t in targets)
+        last_error_code: str | None = None
+        last_error_msg: str | None = None
+    
+        for target in targets:
+            # ---- 熔断跳过（fail-open：Redis 不可用时 is_open 恒为 False）----
+            if CircuitBreaker.is_open(self.tenant_id, target):
+                attempts.append(
+                    Attempt(
+                        model_code=target.model_code,
+                        model_name=target.model_name,
+                        provider=target.provider,
+                        ok=False,
+                        latency_ms=0,
+                        skipped=True,
+                        skip_reason="熔断冷却中，跳过",
+                    )
+                )
+                last_error_code = str(int(ErrorCode.AI_DEGRADED))
+                last_error_msg = "主备链上已有模型处于熔断冷却期"
+                continue
+    
+            result = self._call_with_retry(
+                target, kind=kind, prompt=prompt, texts=texts, query=query, documents=documents,
+                system=system,
+            )
+            attempts.append(
+                Attempt(
+                    model_code=target.model_code,
+                    model_name=target.model_name,
+                    provider=target.provider,
+                    ok=result["ok"],
+                    latency_ms=result["latency_ms"],
+                    error_code=result["error_code"],
+                    error=result["error"],
+                )
+            )
+    
+            if result["ok"]:
+                CircuitBreaker.record_success(self.tenant_id, target)
+                return GatewayCallResult(
+                    ok=True,
+                    kind=kind,
+>                   content=result["content"],
+                            ^^^^^^^^^^^^^^^^^
+                    vectors=result["vectors"],
+                    scores=result["scores"],
+                    tokens_in=result["tokens_in"],
+                    tokens_out=result["tokens_out"],
+                    latency_ms=result["latency_ms"],
+                    first_token_ms=result["first_token_ms"],
+                    target=target,
+                    fallback_used=target.priority > first_priority,
+                    attempts=attempts,
+                )
+E               KeyError: 'content'
+
+app\core\model_gateway.py:408: KeyError
+_________________ test_rerank_accepts_both_score_field_names __________________
+
+    def test_rerank_accepts_both_score_field_names() -> None:
+        """精排分数两种字段名（``relevance_score`` / ``score``）都要认 ——
+        不同推理框架（TEI / Infinity / Xinference）返回的形状不同。"""
+        for payload in (
+            {"results": [{"relevance_score": 0.9}, {"relevance_score": 0.1}]},
+            {"results": [{"score": 0.9}, {"score": 0.1}]},
+        ):
+            gateway, _client = _gateway(lambda url, body, n, p=payload: _FakeResponse(200, p))
+>           result = gateway.call(
+                [_target("r", scene="rerank")], query="q", documents=["d1", "d2"]
+            )
+
+tests\test_ai_gateway.py:363: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <app.core.model_gateway.ModelGateway object at 0x000002BF2B87D570>
+targets = [ModelTarget(id=1109, scene='rerank', model_code='r', display_name='r', provider='ollama', deployment='local', base_ur...ries=0, breaker_threshold=3, breaker_cooldown_seconds=60, price_in_per_1k=Decimal('0'), price_out_per_1k=Decimal('0'))]
+prompt = None, texts = None, query = 'q', documents = ['d1', 'd2']
+system = None
+
+    def call(
+        self,
+        targets: list[ModelTarget],
+        *,
+        prompt: str | None = None,
+        texts: list[str] | None = None,
+        query: str | None = None,
+        documents: list[str] | None = None,
+        system: str | None = None,
+    ) -> GatewayCallResult:
+        """按 ``targets`` 的顺序（= ``priority`` 升序）依次尝试，返回**第一个成功的结果**。
+    
+        :param targets: 已按 ``priority`` 排好序的备选链；空列表 → 直接降级
+        :param prompt: ``generate`` 的提示词
+        :param texts: ``embed`` 的待向量化文本
+        :param query: ``rerank`` 的查询
+        :param documents: ``rerank`` 的候选文档
+        :raises: **不抛任何异常**（见模块 docstring ①）
+    
+        🔴 ``prompt`` / ``texts`` / ``documents`` 里可能含**已脱敏的占位符**
+        （ADR-4：出网只送脱敏片段）—— 网关**不做脱敏**，它只负责搬运。
+        脱敏是调用方（``MaskService``）的责任，网关擅自「顺带脱敏」会让
+        「本地调用也被替换成占位符」，那是错的（本地不出网，无需脱敏）。
+        """
+        started = time.perf_counter()
+        attempts: list[Attempt] = []
+    
+        if not targets:
+            return GatewayCallResult(
+                ok=False,
+                kind="generate",
+                attempts=attempts,
+                degraded=True,
+                degraded_reason="没有可用的模型配置（该场景下无启用中的模型）",
+                error_code=str(int(ErrorCode.AI_DEGRADED)),
+                error_msg="AI 服务降级：无可用模型配置",
+            )
+    
+        kind = kind_of_scene(targets[0].scene)
+        first_priority = min(t.priority for t in targets)
+        last_error_code: str | None = None
+        last_error_msg: str | None = None
+    
+        for target in targets:
+            # ---- 熔断跳过（fail-open：Redis 不可用时 is_open 恒为 False）----
+            if CircuitBreaker.is_open(self.tenant_id, target):
+                attempts.append(
+                    Attempt(
+                        model_code=target.model_code,
+                        model_name=target.model_name,
+                        provider=target.provider,
+                        ok=False,
+                        latency_ms=0,
+                        skipped=True,
+                        skip_reason="熔断冷却中，跳过",
+                    )
+                )
+                last_error_code = str(int(ErrorCode.AI_DEGRADED))
+                last_error_msg = "主备链上已有模型处于熔断冷却期"
+                continue
+    
+            result = self._call_with_retry(
+                target, kind=kind, prompt=prompt, texts=texts, query=query, documents=documents,
+                system=system,
+            )
+            attempts.append(
+                Attempt(
+                    model_code=target.model_code,
+                    model_name=target.model_name,
+                    provider=target.provider,
+                    ok=result["ok"],
+                    latency_ms=result["latency_ms"],
+                    error_code=result["error_code"],
+                    error=result["error"],
+                )
+            )
+    
+            if result["ok"]:
+                CircuitBreaker.record_success(self.tenant_id, target)
+                return GatewayCallResult(
+                    ok=True,
+                    kind=kind,
+>                   content=result["content"],
+                            ^^^^^^^^^^^^^^^^^
+                    vectors=result["vectors"],
+                    scores=result["scores"],
+                    tokens_in=result["tokens_in"],
+                    tokens_out=result["tokens_out"],
+                    latency_ms=result["latency_ms"],
+                    first_token_ms=result["first_token_ms"],
+                    target=target,
+                    fallback_used=target.priority > first_priority,
+                    attempts=attempts,
+                )
+E               KeyError: 'content'
+
+app\core\model_gateway.py:408: KeyError
+___________ test_missing_tokens_are_recorded_as_zero_not_estimated ____________
+
+    def test_missing_tokens_are_recorded_as_zero_not_estimated() -> None:
+        """不返回 usage 的实现 ⇒ token 记 **0**，不估算。
+    
+        估算值会被当成真实用量进成本看板，累积起来是**看不出是估算的**系统性偏差。
+        """
+        gateway, _client = _gateway(lambda url, body, n: _FakeResponse(200, {"response": "ok"}))
+>       result = gateway.call([_target("no-usage")], prompt="hi")
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_ai_gateway.py:376: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <app.core.model_gateway.ModelGateway object at 0x000002BF2A692510>
+targets = [ModelTarget(id=5543, scene='resume_parse', model_code='no-usage', display_name='no-usage', provider='ollama', deploym...ries=0, breaker_threshold=3, breaker_cooldown_seconds=60, price_in_per_1k=Decimal('0'), price_out_per_1k=Decimal('0'))]
+prompt = 'hi', texts = None, query = None, documents = None, system = None
+
+    def call(
+        self,
+        targets: list[ModelTarget],
+        *,
+        prompt: str | None = None,
+        texts: list[str] | None = None,
+        query: str | None = None,
+        documents: list[str] | None = None,
+        system: str | None = None,
+    ) -> GatewayCallResult:
+        """按 ``targets`` 的顺序（= ``priority`` 升序）依次尝试，返回**第一个成功的结果**。
+    
+        :param targets: 已按 ``priority`` 排好序的备选链；空列表 → 直接降级
+        :param prompt: ``generate`` 的提示词
+        :param texts: ``embed`` 的待向量化文本
+        :param query: ``rerank`` 的查询
+        :param documents: ``rerank`` 的候选文档
+        :raises: **不抛任何异常**（见模块 docstring ①）
+    
+        🔴 ``prompt`` / ``texts`` / ``documents`` 里可能含**已脱敏的占位符**
+        （ADR-4：出网只送脱敏片段）—— 网关**不做脱敏**，它只负责搬运。
+        脱敏是调用方（``MaskService``）的责任，网关擅自「顺带脱敏」会让
+        「本地调用也被替换成占位符」，那是错的（本地不出网，无需脱敏）。
+        """
+        started = time.perf_counter()
+        attempts: list[Attempt] = []
+    
+        if not targets:
+            return GatewayCallResult(
+                ok=False,
+                kind="generate",
+                attempts=attempts,
+                degraded=True,
+                degraded_reason="没有可用的模型配置（该场景下无启用中的模型）",
+                error_code=str(int(ErrorCode.AI_DEGRADED)),
+                error_msg="AI 服务降级：无可用模型配置",
+            )
+    
+        kind = kind_of_scene(targets[0].scene)
+        first_priority = min(t.priority for t in targets)
+        last_error_code: str | None = None
+        last_error_msg: str | None = None
+    
+        for target in targets:
+            # ---- 熔断跳过（fail-open：Redis 不可用时 is_open 恒为 False）----
+            if CircuitBreaker.is_open(self.tenant_id, target):
+                attempts.append(
+                    Attempt(
+                        model_code=target.model_code,
+                        model_name=target.model_name,
+                        provider=target.provider,
+                        ok=False,
+                        latency_ms=0,
+                        skipped=True,
+                        skip_reason="熔断冷却中，跳过",
+                    )
+                )
+                last_error_code = str(int(ErrorCode.AI_DEGRADED))
+                last_error_msg = "主备链上已有模型处于熔断冷却期"
+                continue
+    
+            result = self._call_with_retry(
+                target, kind=kind, prompt=prompt, texts=texts, query=query, documents=documents,
+                system=system,
+            )
+            attempts.append(
+                Attempt(
+                    model_code=target.model_code,
+                    model_name=target.model_name,
+                    provider=target.provider,
+                    ok=result["ok"],
+                    latency_ms=result["latency_ms"],
+                    error_code=result["error_code"],
+                    error=result["error"],
+                )
+            )
+    
+            if result["ok"]:
+                CircuitBreaker.record_success(self.tenant_id, target)
+                return GatewayCallResult(
+                    ok=True,
+                    kind=kind,
+                    content=result["content"],
+>                   vectors=result["vectors"],
+                            ^^^^^^^^^^^^^^^^^
+                    scores=result["scores"],
+                    tokens_in=result["tokens_in"],
+                    tokens_out=result["tokens_out"],
+                    latency_ms=result["latency_ms"],
+                    first_token_ms=result["first_token_ms"],
+                    target=target,
+                    fallback_used=target.priority > first_priority,
+                    attempts=attempts,
+                )
+E               KeyError: 'vectors'
+
+app\core\model_gateway.py:409: KeyError
+============================== warnings summary ===============================
+.venv\Lib\site-packages\fastapi\testclient.py:1
+  D:\gan\16个人项目\backend\.venv\Lib\site-packages\fastapi\testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+.venv\Lib\site-packages\starlette\testclient.py:53
+  D:\gan\16个人项目\backend\.venv\Lib\site-packages\starlette\testclient.py:53: DeprecationWarning: The anyio.abc.BlockingPortal alias is deprecated, use anyio.from_thread.BlockingPortal instead.
+    _PortalFactoryType = Callable[[], AbstractContextManager[anyio.abc.BlockingPortal]]
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED tests/test_ai_gateway.py::test_primary_success_no_fallback - KeyError:...
+FAILED tests/test_ai_gateway.py::test_primary_failure_falls_back_to_backup - ...
+FAILED tests/test_ai_gateway.py::test_5xx_then_success_within_retries - KeyEr...
+FAILED tests/test_ai_gateway.py::test_openai_style_response_is_parsed - KeyEr...
+FAILED tests/test_ai_gateway.py::test_embed_parses_vectors - KeyError: 'content'
+FAILED tests/test_ai_gateway.py::test_rerank_accepts_both_score_field_names
+FAILED tests/test_ai_gateway.py::test_missing_tokens_are_recorded_as_zero_not_estimated

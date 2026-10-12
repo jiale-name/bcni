@@ -1,0 +1,428 @@
+{
+  "script_version": "v1.0",
+  "generated_at": "2026-09-23T16:22:01.411227",
+  "summary": {
+    "ok": 6,
+    "degraded": 1,
+    "blocked": 3,
+    "failed": 0
+  },
+  "blockers": [
+    "reranker",
+    "ocr"
+  ],
+  "env": {
+    "APP_ENV": "dev",
+    "APP_VERSION": "0.1.0",
+    "API_V1_PREFIX": "/api/v1",
+    "MYSQL": "127.0.0.1:3306/talent_platform_v2",
+    "MYSQL_凭据": "已配置",
+    "REDIS": "127.0.0.1:6379/0（protocol=2）",
+    "REDIS_凭据": "未配置（若服务端未设密码则正常）",
+    "MILVUS": "127.0.0.1:19530/talent_vec",
+    "MINIO": "127.0.0.1:9000",
+    "MINIO_凭据": "已配置",
+    "OLLAMA_BASE_URL": "http://127.0.0.1:11434",
+    "OLLAMA_MODEL_PARSE": "qwen2.5:3b",
+    "OLLAMA_MODEL_REASON": "qwen3:8b",
+    "EMBEDDING_MODEL": "bge-m3（期望维度 1024）",
+    "RERANKER": "bge-reranker-v2-m3 @ http://127.0.0.1:9997",
+    "DIFY_BASE_URL": "http://127.0.0.1",
+    "DIFY_API_KEY": "已配置",
+    "CLOUD_LLM_BASE_URL": "未配置（一期默认全本地）",
+    "AES_KEY": "已配置",
+    "CONTACT_HASH_SALT": "已配置"
+  },
+  "probes": [
+    {
+      "key": "mysql",
+      "title": "MySQL（DS-1）",
+      "group": "env",
+      "requirement_ref": "需求 §12.1 N0 ③ · §6.1③",
+      "blocking": true,
+      "status": "ok",
+      "healthy": true,
+      "detail": "MySQL 8.0.27 · 库 talent_platform_v2 · 27 张表 · 字符集 utf8mb4/utf8mb4_unicode_ci",
+      "metrics": {
+        "version": "8.0.27",
+        "database": "talent_platform_v2",
+        "charset": "utf8mb4",
+        "collation": "utf8mb4_unicode_ci",
+        "table_count": 27,
+        "connect_ms": 45.95,
+        "meta_query_ms": 4.32
+      },
+      "remediation": ""
+    },
+    {
+      "key": "redis",
+      "title": "Redis（DS-3）",
+      "group": "env",
+      "requirement_ref": "需求 §12.1 N0 ③ · §6.1②",
+      "blocking": true,
+      "status": "ok",
+      "healthy": true,
+      "detail": "Redis 5.0.14.1 · PING 26.5ms · 单连接串行 4,527 ops/s（400 次 / 0.088s）",
+      "metrics": {
+        "version": "5.0.14.1",
+        "ping_ms": 26.54,
+        "ops_per_sec": 4527.5,
+        "rounds": 200,
+        "elapsed_s": 0.0883,
+        "measurement": "single_connection_serial"
+      },
+      "remediation": ""
+    },
+    {
+      "key": "milvus",
+      "title": "Milvus（DS-2）",
+      "group": "env",
+      "requirement_ref": "需求 §12.1 N0 ③⑥ · §6.1①",
+      "blocking": true,
+      "status": "degraded",
+      "healthy": true,
+      "detail": "Milvus 2.6.1 连通 · 库 `talent_vec` 存在 · 现有 collection 0 个 —— **规模性能未验证**（§6.1① 要求 100 万向量下的延迟与 QPS，需灌数后复测）",
+      "metrics": {
+        "version": "2.6.1",
+        "databases": [
+          "default",
+          "talent_vec"
+        ],
+        "configured_database": "talent_vec",
+        "configured_database_exists": true,
+        "collection_count": 0,
+        "collections": [],
+        "million_scale_measured": false,
+        "host": "127.0.0.1",
+        "port": 19530
+      },
+      "remediation": "N0 仅能验证可用性。规模结论请在 N4 灌入 100 万向量后按 IDX-04 口径（P95 ≤ 500ms @ 100 万向量 / 200 并发）补测，勿用本项结果回答 IDX-04。"
+    },
+    {
+      "key": "minio",
+      "title": "MinIO（DS-4）",
+      "group": "env",
+      "requirement_ref": "架构 §7 部署拓扑 · ADR-10",
+      "blocking": false,
+      "status": "ok",
+      "healthy": true,
+      "detail": "MinIO 连通 · 桶 `talent-files` 已存在",
+      "metrics": {
+        "endpoint": "127.0.0.1:9000",
+        "bucket": "talent-files",
+        "bucket_exists": true,
+        "secure": false
+      },
+      "remediation": ""
+    },
+    {
+      "key": "dify",
+      "title": "Dify（集成层）",
+      "group": "env",
+      "requirement_ref": "需求 §12.1 N0 ③",
+      "blocking": false,
+      "status": "ok",
+      "healthy": true,
+      "detail": "Dify 连通 · /v1/parameters 260ms",
+      "metrics": {
+        "base_url": "http://127.0.0.1",
+        "rtt_ms": 259.56
+      },
+      "remediation": ""
+    },
+    {
+      "key": "ollama",
+      "title": "Ollama 服务与模型在册",
+      "group": "model",
+      "requirement_ref": "需求 §12.1 N0 ④",
+      "blocking": true,
+      "status": "ok",
+      "healthy": true,
+      "detail": "Ollama 连通（60ms）· 在册 4 个模型 · 配置模型齐备",
+      "metrics": {
+        "version_rtt_ms": 60.06,
+        "models": [
+          "qwen3:0.6b",
+          "qwen3:8b",
+          "bge-m3:latest",
+          "qwen2.5:3b"
+        ],
+        "resolved": {
+          "parse": "qwen2.5:3b",
+          "reason": "qwen3:8b"
+        },
+        "approx_hits": []
+      },
+      "remediation": ""
+    },
+    {
+      "key": "embedding",
+      "title": "bge-m3 维度与吞吐（H-17 / H-19）",
+      "group": "model",
+      "requirement_ref": "需求 §12.1 N0 ④ · §6.1④",
+      "blocking": true,
+      "status": "ok",
+      "healthy": true,
+      "detail": "bge-m3 维度 1024（与 EMBEDDING_DIM 一致） · 单条 366ms / 2.73 次每秒（8 次采样）",
+      "metrics": {
+        "model": "bge-m3",
+        "endpoint": "http://127.0.0.1:11434/api/embed",
+        "dim": 1024,
+        "expected_dim": 1024,
+        "dim_match": true,
+        "per_call_ms": 365.77,
+        "calls_per_sec": 2.734,
+        "rounds": 8,
+        "measurement": "unique_text_per_round"
+      },
+      "remediation": ""
+    },
+    {
+      "key": "reranker",
+      "title": "bge-reranker-v2-m3 精排延迟",
+      "group": "model",
+      "requirement_ref": "需求 §12.1 N0 ④ · §6.1⑤",
+      "blocking": true,
+      "status": "blocked",
+      "healthy": false,
+      "detail": "Reranker 服务未监听：http://127.0.0.1:9997 无进程在听（3 种端点形状均连接失败）",
+      "metrics": {
+        "model": "bge-reranker-v2-m3",
+        "base_url": "http://127.0.0.1:9997",
+        "attempts": 3,
+        "refused": 3
+      },
+      "remediation": "① 启动 Reranker 服务并确认端口在听：`netstat -ano | findstr :9997` 应见 LISTENING；② 装载 `bge-reranker-v2-m3`（TEI 常见 9997；Infinity 9997；Xinference 9997 + `/v1`）；③ 服务起来后重跑本探针即可转为 ✅ —— 本项只取决于「有没有起服务」，无需改代码。⚠️ 本机若设有 HTTP_PROXY，`curl http://127.0.0.1:9997/...` 会得到**代理伪造的 502**，排障请加 `--noproxy '*'` 才看到真相（探针已用 `trust_env=False` 规避）。"
+    },
+    {
+      "key": "ocr",
+      "title": "OCR / 文档解析依赖完整度",
+      "group": "ops",
+      "requirement_ref": "需求 §12.1 N0 ④⑧",
+      "blocking": true,
+      "status": "blocked",
+      "healthy": false,
+      "detail": "仅有文档解析后端（openpyxl），**无 OCR 后端** —— 图片 / 扫描件简历无法解析（F-3.2 要求该口径单列统计，故必须有 OCR）",
+      "metrics": {
+        "ocr_available": [],
+        "doc_available": [
+          "openpyxl"
+        ],
+        "ocr_candidates": [
+          "cnocr",
+          "rapidocr_onnxruntime",
+          "paddleocr",
+          "pytesseract",
+          "easyocr"
+        ],
+        "doc_candidates": [
+          "fitz",
+          "pdfplumber",
+          "docx",
+          "openpyxl",
+          "PIL"
+        ]
+      },
+      "remediation": "装一个 OCR 后端：`pip install rapidocr-onnxruntime`（轻量推荐）或 `pip install paddleocr`（中文效果更好但更重）；注意 `pytesseract` / `easyocr` 还需额外的系统级依赖（Tesseract 二进制 / torch）。"
+    },
+    {
+      "key": "cloud_channel",
+      "title": "云 GPU 通道 RTT",
+      "group": "perf",
+      "requirement_ref": "需求 §6.1⑥ · D-4 / D-19",
+      "blocking": false,
+      "status": "blocked",
+      "healthy": false,
+      "detail": "未配置 CLOUD_LLM_BASE_URL，云通道未启用（D-19 一期默认全本地推理）",
+      "metrics": {},
+      "remediation": "本项**不影响一期开工**。仅当 N0 压测显示本地 bge-m3 / Reranker 吞吐不足、需要按 D-4 评估 Embedding 上云时，才配置 `CLOUD_LLM_BASE_URL` 并重跑本探针（须同时遵守 D-15 脱敏边界）。"
+    }
+  ],
+  "metrics": [
+    {
+      "code": "§6.1②",
+      "name": "Redis 读写吞吐",
+      "target_desc": "文档只要求「实测吞吐」并纳入基线报告，**未给具体目标值**",
+      "doc_ref": "需求 §6.1 第 ①~⑥ 行 · 需求 §12.1 N0 ⑦②",
+      "scope": "probe",
+      "measured": "4,528（SET+GET 往返折算（单连接串行，**非并发压测**））",
+      "raw": 4527.5
+    },
+    {
+      "code": "§6.1⑤",
+      "name": "Reranker 单次精排延迟",
+      "target_desc": "文档只要求「单次精排延迟」纳入基线，**未给具体目标值**",
+      "doc_ref": "需求 §6.1⑤ · 需求 §12.1 N0 ④",
+      "scope": "probe",
+      "measured": "—（探针未产出该指标）",
+      "raw": null
+    },
+    {
+      "code": "§6.1④",
+      "name": "bge-m3 Embedding 吞吐",
+      "target_desc": "文档要求「份/分钟」，**未给具体目标值**；本文档按「次/秒」记原始基线，「份/分钟」需乘 CL-3 分块方案的单元数/份",
+      "doc_ref": "需求 §6.1④ · 需求 §12.1 N0 ④ · H-19 / D-19 / R-17",
+      "scope": "probe",
+      "measured": "2.73（单条文本 / 秒（逐轮换文本，避免 KV cache 虚高））",
+      "raw": 2.734
+    },
+    {
+      "code": "§6.1⑥",
+      "name": "云 GPU 通道网络往返延迟",
+      "target_desc": "文档要求实测 RTT 并纳入基线，**未给具体目标值**",
+      "doc_ref": "需求 §6.1⑥ · 需求 §12.1 N0 ⑩ · D-4",
+      "scope": "probe",
+      "measured": "—（探针未产出该指标）",
+      "raw": null
+    },
+    {
+      "code": "§6.1①",
+      "name": "Milvus 100 万向量检索延迟与 QPS",
+      "target_desc": "文档要求「100 万向量规模」下实测；N0 阶段**无存量数据**，故本脚本只能验证服务可用性与版本，规模结论留待 N4 灌数后复测",
+      "doc_ref": "需求 §6.1① · 需求 §12.1 N0 ⑥",
+      "scope": "load",
+      "measured": "0（N0 仅验证可用性（现有 collection 数量））",
+      "raw": 0
+    },
+    {
+      "code": "IDX-04",
+      "name": "向量检索延迟",
+      "target_desc": "**P95 ≤ 500ms** @ 100 万向量 / 200 并发（需求 §5 表 IDX-04 明确四要素）",
+      "doc_ref": "需求 §5 IDX-04 · §6.2 · §12.3 验收",
+      "scope": "load",
+      "measured": "—",
+      "raw": null
+    },
+    {
+      "code": "IDX-05 / NFR-2",
+      "name": "普通接口延迟",
+      "target_desc": "**P95 ≤ 1s**",
+      "doc_ref": "需求 §5 IDX-05 · §4 NFR-2",
+      "scope": "load",
+      "measured": "—",
+      "raw": null
+    },
+    {
+      "code": "IDX-11 / NFR-1",
+      "name": "并发能力",
+      "target_desc": "**200 并发下无错误**（实测口径）；2000 人为「在线」非「同时请求」（IDX-11 需澄清）",
+      "doc_ref": "需求 §5 IDX-11 · §4 NFR-1 · Q-6",
+      "scope": "load",
+      "measured": "—",
+      "raw": null
+    },
+    {
+      "code": "NFR-3 / F-2.7",
+      "name": "LLM 首 token 延迟",
+      "target_desc": "**首 token P95 ≤ 3s**（流式）",
+      "doc_ref": "需求 §4 NFR-3 · §3.3 F-2.7",
+      "scope": "load",
+      "measured": "—",
+      "raw": null
+    },
+    {
+      "code": "IDX-06 / NFR-2",
+      "name": "复杂大数据查询",
+      "target_desc": "**P95 ≤ 3s** @ 单表 1000 万行 / 返回 ≤1000 行",
+      "doc_ref": "需求 §5 IDX-06 · §4 NFR-2",
+      "scope": "load",
+      "measured": "—",
+      "raw": null
+    },
+    {
+      "code": "IDX-12 / NFR-2",
+      "name": "页面首屏延迟",
+      "target_desc": "**首屏 P95 ≤ 2s** @ 局域网（Lighthouse + 实测）",
+      "doc_ref": "需求 §5 IDX-12 · §4 NFR-2",
+      "scope": "load",
+      "measured": "—",
+      "raw": null
+    },
+    {
+      "code": "IDX-02",
+      "name": "简历字段级准确率（一期核心）",
+      "target_desc": "**≥ 95%**（图片 / 扫描件单列口径单独统计并报告）",
+      "doc_ref": "需求 §5 IDX-02 · §3.3 F-3.2 · §6.2 · §12.3 验收",
+      "scope": "goldset",
+      "measured": "—",
+      "raw": null
+    },
+    {
+      "code": "IDX-01",
+      "name": "语义检索 Recall@10（一期核心）",
+      "target_desc": "**≥ 85%**，基于 ≥50 条金标准查询集",
+      "doc_ref": "需求 §5 IDX-01 · §3.3 F-3.6 · §6.2 · §12.3 验收",
+      "scope": "goldset",
+      "measured": "—",
+      "raw": null
+    }
+  ],
+  "deliverables": [
+    {
+      "name": "环境验证报告",
+      "owner": "本脚本",
+      "covered": true,
+      "note": "探针表即环境验证结论（MySQL/Redis/Milvus/MinIO/Dify）"
+    },
+    {
+      "name": "模型就绪验证报告",
+      "owner": "本脚本",
+      "covered": true,
+      "note": "bge-m3 维度与吞吐、Reranker 延迟、Ollama 模型在册"
+    },
+    {
+      "name": "基线压测报告",
+      "owner": "本脚本",
+      "covered": true,
+      "note": "§6.1 六项中 4 项给出实测值；另 2 项注明复测时点"
+    },
+    {
+      "name": "OCR 选型验证报告",
+      "owner": "人工",
+      "covered": false,
+      "note": "本脚本只给「依赖是否完整」的清单，选型结论与信创环境实测需人工（§12.1⑧ / R-16）"
+    },
+    {
+      "name": "Milvus collection 规划",
+      "owner": "人工",
+      "covered": false,
+      "note": "本脚本给可用性与版本，collection/索引/度量方式需人工定稿（§12.1⑥）"
+    },
+    {
+      "name": "金标准集标注启动确认",
+      "owner": "甲方",
+      "covered": false,
+      "note": "CU-28 提供标注模板与质检脚本；**标注本身必须由甲方 HR/业务专家完成**（D-11）"
+    },
+    {
+      "name": "国产化清单或书面豁免",
+      "owner": "甲方",
+      "covered": false,
+      "note": "Q-3 未回；D-18 一期仅承诺国产 OS + CPU（H-18 / R-16）"
+    },
+    {
+      "name": "需求澄清纪要（档案模块矛盾结论）",
+      "owner": "甲方",
+      "covered": false,
+      "note": "M-2 无人化 / M-3 指标口径 / M-4 向量规模"
+    },
+    {
+      "name": "指标应答口径表（签字版）",
+      "owner": "甲方",
+      "covered": false,
+      "note": "**N0 必签**；未签则 IDX-04/05/11 无判定依据"
+    },
+    {
+      "name": "数据出网边界协议",
+      "owner": "甲方",
+      "covered": false,
+      "note": "决定 D-4 混合路由的可用形态（ADR-4 / D-15）"
+    },
+    {
+      "name": "技术偏离申报表",
+      "owner": "人工",
+      "covered": false,
+      "note": "投标有效性相关（§6.5），不编码但必须出"
+    }
+  ]
+}

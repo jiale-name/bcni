@@ -1,0 +1,53 @@
+"""Pydantic 契约层（架构 §3.3：``schemas/`` 只做入参校验与出参序列化，不含业务逻辑）。"""
+
+from app.schemas.auth import (
+    ChangePasswordOut,
+    ChangePasswordRequest,
+    LoginOut,
+    LoginRequest,
+    LogoutOut,
+    LogoutRequest,
+    PermissionsOut,
+    RefreshOut,
+    RefreshRequest,
+    UserInfoOut,
+)
+from app.schemas.common import (
+    DEFAULT_PER_PAGE,
+    MAX_PER_PAGE,
+    ApiResponse,
+    CommonResp,
+    PageInfo,
+    PageQuery,
+    SnowflakeId,
+    build_page_info,
+    degraded,
+    normalize_per_page,
+    ok,
+    paginated,
+)
+
+__all__ = [
+    "DEFAULT_PER_PAGE",
+    "MAX_PER_PAGE",
+    "ApiResponse",
+    "ChangePasswordOut",
+    "ChangePasswordRequest",
+    "CommonResp",
+    "LoginOut",
+    "LoginRequest",
+    "LogoutOut",
+    "LogoutRequest",
+    "PageInfo",
+    "PageQuery",
+    "PermissionsOut",
+    "RefreshOut",
+    "RefreshRequest",
+    "SnowflakeId",
+    "UserInfoOut",
+    "build_page_info",
+    "degraded",
+    "normalize_per_page",
+    "ok",
+    "paginated",
+]

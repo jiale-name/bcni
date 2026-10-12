@@ -1,0 +1,10 @@
+# deploy/ 下的本机实际值不入库（架构 §7.4「配置外置」）
+.env
+.env.*
+!.env.example
+
+# 分区归档产物（可能含个人信息相关的操作流水，不入库）
+archive/
+
+# compose 若改用 bind mount 时的数据目录
+data/

@@ -1,0 +1,24 @@
+# 本机开发环境版本快照（部署基线对照用）
+# 采集时间：2026-10-04 14:10:29 +0800
+# 采集机器：DESKTOP-DKO2LI9 / MINGW64_NT-10.0-19045 3.6.9-b4195d69.x86_64
+
+## 运行时
+Python(项目 venv)   : Python 3.13.14
+Python(本机 conda)  : Python 3.14.6
+Node.js             : v22.22.2
+npm                 : 10.9.7
+Git                 : git version 2.55.0.windows.3
+
+## 数据组件（本机）
+MySQL               : C:\tools\mysql\mysql-8.0.27-winx64\bin\mysql.exe  Ver 8.0.27 for Win64 on x86_64 (MySQL Community Server - GPL)
+Redis               : 见下方「监听端口」，本机 6379 在跑（无 redis-server CLI 于 PATH）
+Docker              : Docker version 29.8.0, build 88096ef
+Docker Compose      : Docker Compose version v5.5.1
+
+## 本机运行状态（netstat 实测）
+    TCP    0.0.0.0:3306           0.0.0.0:0              LISTENING       6476
+    TCP    0.0.0.0:8002           0.0.0.0:0              LISTENING       20324
+    TCP    127.0.0.1:6379         0.0.0.0:0              LISTENING       4180
+    TCP    127.0.0.1:11434        0.0.0.0:0              LISTENING       18828
+    TCP    [::]:3306              [::]:0                 LISTENING       6476
+    TCP    [::1]:5173             [::]:0                 LISTENING       20288

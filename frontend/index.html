@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI 数字化人才平台 · 一期</title>
+    <!--
+      🔴 与后端「同源」是设计约束：生产由 Nginx 托管 dist 并反代 /api（deploy/nginx.conf），
+         开发由 Vite proxy 转发（vite.config.ts）。故此处**不配**任何跨域相关 meta。
+    -->
+  </head>
+  <body>
+    <div id="app"></div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

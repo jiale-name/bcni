@@ -1,0 +1,19 @@
+[project]
+name = "ai-talent-platform-backend"
+version = "0.1.0"
+description = "2026 顶配版 AI 数字化人才平台 · 后端（一期：F-3 档案与数字画像）"
+requires-python = ">=3.11"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+asyncio_mode = "auto"
+addopts = "-q"
+
+[tool.ruff]
+line-length = 110
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+ignore = ["B008"]  # FastAPI Depends() 作为默认值是官方推荐写法

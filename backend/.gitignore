@@ -1,0 +1,25 @@
+# ---- Python ----
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.pytest_tmp/
+.ruff_cache/
+.mypy_cache/
+htmlcov/
+.coverage
+
+# ---- 环境变量（🔴 含密钥，绝不入库）----
+# 注意：必须写成 .env.* 才能覆盖 .env.bak / .env.old 这类备份文件
+.env
+.env.*
+!.env.example
+
+# ---- 运行期产物 ----
+logs/
+*.log
+uploads/
+tmp/
+.alembic_offline.sql

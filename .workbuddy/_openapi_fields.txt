@@ -1,0 +1,242 @@
+--- AdminUserOut
+    id*:string, username*:string, real_name:string|null, org_id:string|null, org_name:string|null, position_id:string|null, position_name:string|null, phone:string|null, email:string|null, status:integer, status_name:string|null, role_ids:array<string>, roles:array<string>, last_login_at:string|null, created_at:string|null
+--- AgentInterruptOut
+    id*:string, task_id*:string, node_name*:string, interrupt_type*:string, interrupt_type_name:string|null, payload:object|null, assignee_role:string|null, status*:integer, status_name:string|null, decided_by:string|null, decided_by_name:string|null, decided_at:string|null, comment:string|null, created_at*:string|null, updated_at*:string|null
+--- AgentStepOut
+    id*:string, task_id*:string, node_name*:string, step_index*:integer, input:None, output:None, latency_ms:integer|null, status*:integer, status_name:string|null, error_msg:string|null, created_at*:string|null
+--- AgentTaskDetailOut
+    id*:string, task_type*:string, task_type_name:string|null, biz_id:string|null, status*:integer, status_name:string|null, current_node:string|null, retry_count:integer, created_at*:string|null, updated_at*:string|null, idempotent_key:string|null, graph_state:object|null, step_count:integer
+--- AgentTaskOut
+    id*:string, task_type*:string, task_type_name:string|null, biz_id:string|null, status*:integer, status_name:string|null, current_node:string|null, retry_count:integer, created_at*:string|null, updated_at*:string|null
+--- AgentTaskRetryOut
+    task_id*:string, status*:integer, status_name:string|null, retry_count*:integer, current_node:string|null, resumed:boolean, message:string|null
+--- AiCallLogListResp
+    code:integer, message:string, data:array|null, page:PageInfo|null, trace_id:string|null, summary:AiCallSummary|null
+--- AiCallLogOut
+    id*:string, trace_id:string|null, scene:string|null, scene_name:string|null, scene_stage:string|null, model:string|null, provider:string|null, prompt_id:string|null, prompt_code:string|null, prompt_version:integer|null, tokens_in:integer, tokens_out:integer, cost_yuan*:string, latency_ms:integer|null, first_token_ms:integer|null, cache_hit:boolean, fallback_used:boolean, mask_applied:boolean, status*:integer, status_name:string|null, error_code:string|null, error_msg:string|null, created_at*:string|null
+--- AiCallSummary
+    calls:integer, cost_total_yuan:string, avg_latency_ms:integer, failed:integer, mask_applied_rate:number, cache_hit_rate:number, cloud_calls:integer, cost_alert:boolean, mask_alert:boolean
+--- AskRequest
+    scope*:AskScope, question*:string, session_id:string|null, stream:boolean, top_k:integer
+--- AskScope
+    type*:string, talent_ids*:array<string>
+--- AssignRolesRequest
+    role_ids:array<string>
+--- AuditExportOut
+    filename*:string, format:string, row_count:integer, filters:object, content:string, generated_at*:string|null
+--- AuditExportRequest
+    user_id:string|null, action:string|null, target_type:string|null, target_id:string|null, start_time:string|null, end_time:string|null, keyword:string|null, format:string, max_rows:integer
+--- AuditLogOut
+    id*:string, created_at*:string|null, user_id:string|null, username:string|null, action*:string, action_name:string|null, target_type:string|null, target_name:string|null, target_id:string|null, before:None, after:None, ip:string|null, ua:string|null, trace_id:string|null
+--- BindPermissionsRequest
+    perm_ids:array<string>
+--- Body_create_import_task_api_v1_talent_import_post
+    files*:array<string>, auto_dedup:boolean, auto_tag:boolean, parse_strategy:string, remark:string|null
+--- Body_import_users_api_v1_users_import_post
+    file*:string
+--- ChangeLogOut
+    id*:string, talent_id*:string, talent_name:string|null, change_source*:integer, change_source_name:string|null, field_name:string|null, field_label:string|null, before_value:string|null, after_value:string|null, snapshot_ref:string|null, operator_id:string|null, operator_name:string|null, task_id:string|null, created_at*:string|null
+--- ChangePasswordOut
+    changed*:boolean, relogin_required:boolean
+--- ChangePasswordRequest
+    old_password*:string, new_password*:string
+--- CorrectionResolveOut
+    request_id*:string, status*:integer, status_name:string|null, talent_id*:string, field_code:string|null, applied:boolean, applied_value:string|null, change_log_id:string|null, notified:boolean, processed_at*:string|null
+--- CorrectionResolveRequest
+    approved*:boolean, reason:string|null, applied_value:string|null
+--- CorrectionSubmitOut
+    request_id*:string, request_no*:string, request_type:string, status*:integer, status_name:string|null, review_queue:string, review_field_id:string|null, sla_hours*:integer, submitted_at*:string|null
+--- CorrectionSubmitRequest
+    talent_id*:string, field_code*:string, current_value*:string, expected_value*:string, reason*:string, attachments:array<string>
+--- CostBucketOut
+    key*:string, label:string|null, calls:integer, tokens_in:integer, tokens_out:integer, cost_yuan*:string, avg_latency_ms:integer
+--- CostDashboardOut
+    start_time*:string|null, end_time*:string|null, total*:AiCallSummary, by_scene*:array<CostBucketOut>, by_model*:array<CostBucketOut>, by_time*:array<CostBucketOut>
+--- DedupMergeOut
+    pair_id*:string, master_id*:string, slave_id*:string, vector_reindexed:boolean, merged_at*:string|null
+--- DedupMergeRequest
+    master_id*:string, field_strategy:object, merge_tags:boolean, merge_detail:boolean
+--- DedupRollbackOut
+    merge_id*:string, master_id*:string, slave_id*:string, rolled_back_at*:string|null
+--- DeletionApproveOut
+    request_id*:string, status*:integer, status_name:string|null, talent_id*:string, talent_soft_deleted:boolean, vector_cleaned:object, vector_degraded:boolean, change_log_id:string|null, notified:boolean, processed_at*:string|null
+--- DeletionApproveRequest
+    approved*:boolean, reason:string|null
+--- DeletionSubmitOut
+    request_id*:string, request_no*:string, request_type:string, status*:integer, status_name:string|null, talent_id*:string, sla_hours*:integer, approver_hint:string, submitted_at*:string|null
+--- DeletionSubmitRequest
+    talent_id*:string, reason*:string
+--- DictItemCreateRequest
+    item_code*:string, item_name*:string, sort_no:integer, parent_code:string|null, status:integer
+--- DictItemDeleteOut
+    id*:string, type_code*:string, item_code*:string, item_name*:string, status*:integer, status_name:string|null, already_disabled:boolean
+--- DictItemListOut
+    total:integer, items:array<DictItemOut>
+--- DictItemOut
+    id*:string, type_code*:string, item_code*:string, item_name*:string, sort_no:integer, parent_code:string|null, status*:integer, status_name:string|null, created_at:string|null, updated_at:string|null
+--- DictItemUpdateRequest
+    item_name:string|null, sort_no:integer|null, parent_code:string|null, status:integer|null
+--- DictTypeListOut
+    total:integer, items:array<DictTypeOut>
+--- DictTypeOut
+    id*:string, type_code*:string, type_name*:string, remark:string|null, status*:integer, status_name:string|null, item_count:integer, enabled_item_count:integer
+--- DupCompareOut
+    pair_id*:string, talent_a*:TalentBriefOut, talent_b*:TalentBriefOut, similarity:number|null, match_fields:array<string>, status*:integer, status_name:string|null
+--- DupIgnoreOut
+    pair_id*:string, status*:integer, status_name:string|null
+--- ExportDownloadOut
+    request_id*:string, talent_id*:string, filename*:string, format:string, content*:string, download_count:integer, generated_at*:string|null
+--- ExportSubmitOut
+    request_id*:string, request_no*:string, request_type:string, status*:integer, status_name:string|null, format:string, download_url*:string, sla_hours*:integer, submitted_at*:string|null
+--- ExportSubmitRequest
+    talent_id*:string, format:string
+--- FieldHistoryOut
+    talent_id*:string, talent_name:string|null, field_code*:string, field_label:string|null, current_value:string|null, total:integer, items:array<ChangeLogOut>
+--- HTTPValidationError
+    detail:array<ValidationError>
+--- ImportCreateOut
+    task_id*:string, task_no*:string, status*:integer, status_name*:string|null, total_count*:integer, warn:string|null
+--- ImportTaskOut
+    task_id*:string, task_no*:string, status*:integer, status_name*:string|null, parse_strategy:string|null, total_count:integer, success_count:integer, fail_count:integer, dup_pair_count:integer, review_pending_count:integer, review_high_impact_count:integer, review_low_impact_sampled_count:integer, field_complete_rate:number|null, progress_pct:integer, agent_task_id:string|null, remark:string|null, created_by:string|null, created_by_name:string|null, started_at:string|null, finished_at:string|null, created_at:string|null
+--- InterruptResolveOut
+    interrupt_id*:string, interrupt_type*:string, status*:integer, status_name:string|null, task_id*:string, resumed*:boolean, next_node:string|null, task_status:integer|null, task_status_name:string|null, handled_by:string|null, handled_by_name:string|null, handled_at:string|null
+--- InterruptResolveRequest
+    decision*:string, comment:string|null, payload:object|null
+--- LoginOut
+    access_token*:string, refresh_token*:string, token_type:string, expires_in*:integer, user*:UserInfoOut
+--- LoginRequest
+    username*:string, password*:string, tenant_code:string|null
+--- LogoutOut
+    revoked*:boolean, all_devices:boolean
+--- LogoutRequest
+    refresh_token:string|null, all_devices:boolean
+--- MatchedChunkOut
+    chunk_pk*:string, field_name:string|null, snippet:string|null, score*:number
+--- ModelConfigOut
+    id*:string, scene*:string, scene_name:string|null, model_code*:string, display_name*:string, provider*:string, provider_name:string|null, deployment*:string, deployment_name:string|null, base_url*:string, model_name*:string, priority*:integer, timeout_seconds*:number, max_retries*:integer, breaker_threshold*:integer, breaker_cooldown_seconds*:integer, price_in_per_1k*:string, price_out_per_1k*:string, status*:integer, status_name:string|null, remark:string|null, created_at*:string|null, updated_at*:string|null
+--- ModelConfigUpdateRequest
+    display_name:string|null, provider:string|null, deployment:string|null, base_url:string|null, model_name:string|null, priority:integer|null, timeout_seconds:number|null, max_retries:integer|null, breaker_threshold:integer|null, breaker_cooldown_seconds:integer|null, price_in_per_1k:number|string|null, price_out_per_1k:number|string|null, status:integer|null, remark:string|null
+--- ModelHealthOut
+    checked_at*:string|null, total*:integer, healthy*:integer, unavailable*:integer, blocked*:integer, all_primary_healthy*:boolean, breaker_backend_ok*:boolean, items*:array<ModelTargetOut>
+--- ModelTargetOut
+    id*:string, scene*:string, scene_name:string|null, model_code*:string, display_name*:string, provider*:string, deployment*:string, model_name*:string, priority*:integer, status*:integer, status_name:string|null, healthy*:boolean, latency_ms:integer|null, error:string|null, blocked:boolean, consecutive_failures:integer, cooldown_remaining_seconds:integer
+--- OrgCreateRequest
+    parent_id:string, dept_code*:string, dept_name*:string, leader_user_id:string|null, sort_no:integer, status:integer
+--- OrgDeleteOut
+    dept_id*:string, dept_name*:string, deleted:boolean, affected_children:integer
+--- OrgNodeOut
+    id*:string, parent_id:string, dept_code*:string, dept_name*:string, dept_level:integer, dept_path:string|null, leader_user_id:string|null, sort_no:integer, status:integer, status_name:string|null, children:array<OrgNodeOut>
+--- OrgTreeOut
+    total:integer, items:array<OrgNodeOut>
+--- OrgUpdateRequest
+    dept_code:string|null, dept_name:string|null, parent_id:string|null, leader_user_id:string|null, sort_no:integer|null, status:integer|null
+--- PageInfo
+    total:integer, page:integer, per_page:integer, pages:integer
+--- PermissionNodeOut
+    id*:string, perm_code*:string, perm_name*:string, perm_type*:integer, perm_type_name:string|null, parent_id:string, sort_no:integer, status:integer, children:array<PermissionNodeOut>
+--- PermissionScopeOut
+    tenant_id*:string, org_ids:array|null
+--- PermissionTreeOut
+    total:integer, items:array<PermissionNodeOut>
+--- PermissionsOut
+    perm_codes:array<string>, roles:array<string>, is_admin:boolean, perm_version*:integer
+--- PositionCreateRequest
+    position_code*:string, position_name*:string, dept_id:string|null, position_level:integer|null, status:integer
+--- PositionListOut
+    total:integer, items:array<PositionOut>
+--- PositionOut
+    id*:string, position_code*:string, position_name*:string, dept_id:string|null, position_level:integer|null, status:integer, status_name:string|null
+--- PrivacyLedgerOut
+    items:array<PrivacyRequestOut>, summary:object
+--- PrivacyRequestOut
+    id*:string, request_no*:string, request_type*:integer, request_type_name:string|null, talent_id*:string, talent_name:string|null, applicant_user_id*:string, applicant_name:string|null, field_code:string|null, field_label:string|null, current_value:string|null, expected_value:string|null, review_field_id:string|null, reason:string|null, status*:integer, status_name:string|null, sla_hours*:integer, overdue:boolean, waited_hours:number|null, processed_by:string|null, processed_by_name:string|null, processed_at:string|null, reject_reason:string|null, notified_at:string|null, download_count:integer, created_at*:string|null
+--- PromptCreateRequest
+    prompt_code*:string, scene*:string, content*:string, status:integer, remark:string|null
+--- PromptOut
+    id*:string, prompt_code*:string, scene*:string, scene_name:string|null, version*:integer, content*:string, status*:integer, status_name:string|null, created_by:string|null, created_at*:string|null, updated_at*:string|null
+--- PromptRollbackRequest
+    target_version*:integer, remark:string|null
+--- PromptUpdateRequest
+    content*:string, status:integer|null, remark:string|null
+--- RefreshOut
+    access_token*:string, token_type:string, expires_in*:integer
+--- RefreshRequest
+    refresh_token*:string
+--- ReviewConfirmOut
+    confirmed_count*:integer, corrected_count*:integer, skipped_count*:integer, conflicted*:array<object>, change_log_ids*:array<string>
+--- ReviewCorrectOut
+    field_id*:string, talent_id*:string, review_status*:integer, review_status_name*:string|null, change_log_id:string|null
+--- ReviewDashboardOut
+    pending_total*:integer, confirmed_total*:integer, corrected_total*:integer, skipped_total*:integer, by_field*:array<object>, estimated_remaining_minutes*:integer
+--- ReviewDetailOut
+    field_id*:string, talent_id*:string, talent_name*:string, field_code*:string, field_name*:string, raw_value*:string|null, parsed_value*:string|null, confidence:number|null, impact_level*:string, impact_level_name*:string, review_status*:integer, review_status_name*:string|null, source_file:string|null, source_locator:string|null
+--- ReviewQueueItem
+    field_id*:string, talent_id*:string, talent_name*:string, field_code*:string, field_name*:string, raw_value*:string|null, parsed_value*:string|null, confidence:number|null, impact_level*:string, impact_level_name*:string, review_status*:integer, review_status_name*:string|null, source_file:string|null, source_locator:string|null
+--- ReviewQueueMeta
+    high_impact_total:integer, low_impact_sampled_total:integer, warning:string|null, estimated_minutes:integer|null
+--- ReviewQueueResp
+    code:integer, message:string, data:array|null, page:PageInfo|null, trace_id:string|null, meta:ReviewQueueMeta|null
+--- RoleCreateRequest
+    role_code*:string, role_name*:string, data_scope:integer, status:integer
+--- RoleListOut
+    total:integer, items:array<RoleOut>
+--- RoleOut
+    id*:string, role_code*:string, role_name*:string, data_scope*:integer, data_scope_name:string|null, is_builtin:boolean, status:integer, status_name:string|null
+--- RolePermissionsOut
+    role_id*:string, perm_ids:array<string>, perm_codes:array<string>, affected_users:integer, perm_version:integer
+--- RoleUpdateRequest
+    role_name:string|null, data_scope:integer|null, status:integer|null
+--- SearchFilters
+    org_ids:array|null, education_level_min:string|null, work_years_min:integer|null, tag_codes:array|null
+--- SearchHitOut
+    talent_id*:string, name*:string, org_id:string|null, org_name:string|null, work_years:integer|null, score*:number, hit_reasons:array<string>, matched_chunks:array<MatchedChunkOut>
+--- SearchMetaOut
+    mode_used*:string, degraded:boolean, degraded_reason:string|null, permission_filter_applied:boolean, permission_scope*:PermissionScopeOut, candidate_pool_size:integer, rerank_used:boolean, elapsed_ms:integer
+--- SearchOut
+    items*:array<SearchHitOut>, meta*:SearchMetaOut
+--- SearchRequest
+    query*:string, top_k:integer, mode:string, filters:SearchFilters|null, with_reason:boolean, rerank:boolean
+--- SnapshotOut
+    talent_id*:string, at*:string|null, snapshot_from_change_log_id:string|null, talent*:SnapshotTalentOut, tags:array<SnapshotTagOut>, effective_from*:string|null, effective_to:string|null, changes_after:integer, untracked_fields:array<string>, restored_fields:array<string>, history_truncated:boolean
+--- SnapshotTagOut
+    tag_code*:string, tag_name:string|null, source:integer|null, source_name:string|null
+--- SnapshotTalentOut
+    id*:string, name:string|null, gender:integer|null, birth_date:string|null, education_level:string|null, school:string|null, major:string|null, work_years:integer|null, data_status:integer|null, data_status_name:string|null, version_no:integer|null
+--- TagCreateRequest
+    tag_code:string|null, tag_name*:string, category_l1:string|null, category_l2:string|null, category_l3:string|null, synonyms:array<string>
+--- TagDictOut
+    tag_id*:string, tag_code*:string, tag_name*:string, category_l1:string|null, category_l2:string|null, category_l3:string|null, synonyms:array<string>, status*:integer, status_name*:string|null, source*:integer, source_name*:string|null, approved_by:string|null, approved_at:string|null, created_at:string|null
+--- TagReviewOut
+    suggestion_id*:string, status*:integer, status_name*:string|null, tag_code:string|null, activated_at:string|null
+--- TagReviewRequest
+    decision*:string, tag_code:string|null, reject_reason:string|null
+--- TagSuggestOut
+    suggestion_id*:string, status*:integer, status_name*:string|null, tag_code:string|null
+--- TagSuggestRequest
+    tag_name*:string, category_code*:string, synonyms:array<string>, sample_talent_ids:array<string>, reason:string|null
+--- TagUpdateRequest
+    tag_name:string|null, category_l1:string|null, category_l2:string|null, category_l3:string|null, synonyms:array|null, action:string|null
+--- TalentBriefOut
+    talent_id*:string, name*:string, school:string|null, major:string|null, education_level:string|null, work_years:integer|null, phone_masked:string|null, email_masked:string|null, tags:array<string>
+--- TalentTagOut
+    tag_code*:string, tag_name*:string, confidence:number|null, source*:integer, source_name*:string|null, category_l1:string|null, category_l2:string|null, category_l3:string|null
+--- TalentTagsOut
+    talent_id*:string, tags*:array<TalentTagOut>
+--- TalentTagsPutRequest
+    tag_codes*:array<string>
+--- UserCreateOut
+    user*:AdminUserOut, initial_password:string|null
+--- UserCreateRequest
+    username*:string, password:string|null, real_name:string|null, org_id:string|null, position_id:string|null, phone:string|null, email:string|null, role_ids:array<string>, status:integer
+--- UserImportError
+    row*:integer, username:string|null, reason*:string
+--- UserImportOut
+    total:integer, success:integer, failed:integer, errors:array<UserImportError>
+--- UserInfoOut
+    id*:string, username*:string, real_name:string|null, tenant_id*:string, org_id:string|null, org_name:string|null, roles:array<string>, data_scope*:integer, data_scope_name:string|null
+--- UserRolesOut
+    user_id*:string, role_ids:array<string>, role_codes:array<string>, perm_version:integer
+--- UserUpdateRequest
+    real_name:string|null, org_id:string|null, position_id:string|null, phone:string|null, email:string|null, status:integer|null
+--- ValidationError
+    loc*:array<>, msg*:string, type*:string, input:None, ctx:object

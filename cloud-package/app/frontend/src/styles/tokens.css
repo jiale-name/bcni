@@ -1,0 +1,118 @@
+/* ============================================================================
+   AI 数字化人才平台 · 前端设计令牌（CU-23）
+   ----------------------------------------------------------------------------
+   🔴 **单一来源**：本文件是 `prototype/p01~p19*.html` 里 `:root{...}` 的 **1:1 移植**。
+      原型已通过评审（§6.2 选择 A「保留多页原型」），故**不在前端另起一套配色**。
+      ❌ 视图内不得写死颜色 / 圆角 / 阴影，一律引用本文件的变量。
+
+   ⚠️ 与 Element Plus 的关系：Element Plus 的组件变量（`--el-*`）在本文件末尾
+      **被显式对齐到原型令牌**，保证「自研组件」与「EP 组件」在同一页里不撞色。
+   ============================================================================ */
+
+:root {
+  /* ---------- 基础面 ---------- */
+  --bg: #f3f6f7;
+  --panel: #ffffff;
+  --line: #d9e3e6;
+  --line-2: #ecf1f2;
+
+  /* ---------- 文字（四级） ---------- */
+  --txt: #18262d;
+  --txt-2: #52636a;
+  --txt-3: #84939a;
+  --txt-4: #b6c1c6;
+
+  /* ---------- 主色（深青，政务科技风） ---------- */
+  --primary: #175d75;
+  --primary-weak: #e5f2f4;
+  --primary-deep: #0f465b;
+  --primary-line: #bcd9de;
+
+  /* ---------- 语义色 ---------- */
+  --danger: #c8474f;
+  --danger-weak: #fcedee;
+  --danger-line: #ecc9cc;
+  --warn: #b76b16;
+  --warn-weak: #fff5e2;
+  --warn-line: #efdcb7;
+  --ok: #16836a;
+  --ok-weak: #e6f5ef;
+  --ok-line: #bde2d5;
+  --info: #526da6;
+  --info-weak: #eff2fb;
+  --info-line: #ccd6ee;
+  --purple: #6b46c1;
+  --purple-weak: #f1ecfb;
+  --purple-line: #dbd0f2;
+  --teal: #0f7b8a;
+
+  /* ---------- 侧栏（原型的 --nav-* 系列） ---------- */
+  --nav-bg: #e9f4f3;
+  --nav-line: #c9e1df;
+  --nav-hover: #dff0ef;
+  --nav-active: #c5e6e5;
+  --nav-active-txt: #0f6670;
+  --nav-group: #6b8588;
+
+  /* ---------- 尺寸 ---------- */
+  --radius: 6px;
+  --radius-lg: 9px;
+  --sidebar: 224px;
+  --topbar: 56px;
+
+  /* ---------- 阴影 ---------- */
+  --shadow: 0 1px 3px rgba(24, 47, 56, 0.07);
+  --shadow-md: 0 6px 22px rgba(24, 47, 56, 0.13);
+  --shadow-lg: 0 18px 48px rgba(24, 47, 56, 0.2);
+
+  /* ---------- 字体 ---------- */
+  --mono: ui-monospace, Consolas, 'Courier New', monospace;
+}
+
+/* ============================================================================
+   Element Plus 变量对齐
+   ----------------------------------------------------------------------------
+   只覆盖**外观类**变量（色 / 圆角），不改行为类变量。
+   ============================================================================ */
+:root {
+  --el-color-primary: var(--primary);
+  --el-color-primary-light-3: #4a8598;
+  --el-color-primary-light-5: #7ba9b8;
+  --el-color-primary-light-7: #adc9d2;
+  --el-color-primary-light-8: #c6dbe1;
+  --el-color-primary-light-9: var(--primary-weak);
+  --el-color-primary-dark-2: var(--primary-deep);
+
+  --el-color-success: var(--ok);
+  --el-color-success-light-9: var(--ok-weak);
+  --el-color-warning: var(--warn);
+  --el-color-warning-light-9: var(--warn-weak);
+  --el-color-danger: var(--danger);
+  --el-color-danger-light-9: var(--danger-weak);
+  --el-color-error: var(--danger);
+  --el-color-error-light-9: var(--danger-weak);
+  --el-color-info: var(--info);
+  --el-color-info-light-9: var(--info-weak);
+
+  --el-text-color-primary: var(--txt);
+  --el-text-color-regular: var(--txt-2);
+  --el-text-color-secondary: var(--txt-3);
+  --el-text-color-placeholder: var(--txt-3);
+  --el-border-color: var(--line);
+  --el-border-color-light: var(--line-2);
+  --el-border-color-lighter: var(--line-2);
+  --el-fill-color-blank: var(--panel);
+  --el-fill-color-light: var(--line-2);
+  --el-bg-color: var(--panel);
+  --el-bg-color-page: var(--bg);
+
+  --el-border-radius-base: 5px;
+  --el-border-radius-small: 4px;
+  --el-font-size-base: 13px;
+  --el-component-size: 32px;
+  --el-component-size-small: 26px;
+  --el-component-size-large: 38px;
+
+  --el-box-shadow-light: var(--shadow);
+  --el-box-shadow: var(--shadow-md);
+}

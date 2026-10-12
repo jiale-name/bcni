@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>题库管理 · P-21</title>
+  <link rel="stylesheet" href="assessment.css?v=20260928-nav2">
+</head>
+<body>
+<a class="skip-link" href="#main-content">跳到主要内容</a>
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand"><span class="dot">才</span><span class="brand-copy"><b>AI 人才平台</b><small>人才测评 · 原型</small></span></div>
+    <nav class="nav" aria-label="主导航">
+      <a href="p02-dashboard.html"><span class="ico">◧</span>工作台首页</a>
+      <div class="grp">人才档案</div>
+      <a href="p07-talent-list.html"><span class="ico">▤</span>人才档案列表</a>
+      <a href="p12-talent-search.html"><span class="ico">◎</span>语义人才检索</a>
+      <a href="p14-talent-ask.html"><span class="ico">✦</span>档案 RAG 问答</a>
+      <a href="p10-talent-review.html"><span class="ico">✎</span>字段复核工作台</a>
+      <div class="grp">人才测评</div>
+      <a class="active" href="p21-assessment-question.html"><span class="ico">▦</span>题库管理</a>
+      <a href="p22-assessment-paper.html"><span class="ico">▤</span>组卷工作台</a>
+      <a href="p23-assessment-task.html"><span class="ico">◷</span>测评任务</a>
+      <a href="p25-assessment-monitor.html"><span class="ico">◌</span>结果与监控</a>
+      <div class="grp">AI 中台</div>
+      <a href="p18-agent-task.html"><span class="ico">⚑</span>Agent 任务与待办</a>
+      <a href="p16-ai-model.html"><span class="ico">⚙</span>模型与 Prompt</a>
+      <div class="grp">个人入口</div>
+      <a href="p24-assessment-take.html"><span class="ico">✓</span>我的测评</a>
+    </nav>
+    <div class="userbox"><span class="avatar">张</span><span class="user-meta"><b>张敏</b><small>HR 管理员 · 人力资源部</small></span></div>
+  </aside>
+  <button class="nav-backdrop" type="button" aria-label="关闭导航" data-nav-toggle></button>
+  <main class="main">
+    <header class="topbar"><button class="mobile-nav" type="button" aria-label="打开导航" data-nav-toggle>☰</button><div class="crumb"><b>题库管理</b><span>/ 人才测评 / P-21</span></div><div class="acts"><span class="scope">数据域：全部</span><span class="muted">|</span><span>张敏（HR）</span></div></header>
+    <div class="content" id="main-content" tabindex="-1">
+      <div class="page-head"><div><div class="eyebrow">F-4.1 · F-4.9 / TBL-30</div><h1>题库管理</h1><p>控制题目版本、能力维度和审核责任链，未审核题目不能进入组卷。</p></div><div class="head-actions"><button class="btn" data-toast-message="模板下载已准备">⇩ 下载模板</button><button class="btn btn-primary" data-open="#question-drawer">＋ 新建题目</button></div></div>
+      <div class="grid g4">
+        <div class="stat"><div class="stat-label">题目总数</div><div class="stat-value">286<small>道</small></div><div class="stat-note">含 34 个历史版本</div></div>
+        <div class="stat"><div class="stat-label">待专家审核</div><div class="stat-value" style="color:var(--warn)">18<small>道</small></div><div class="stat-note">其中 AI 生成 11 道</div></div>
+        <div class="stat"><div class="stat-label">已启用</div><div class="stat-value" style="color:var(--ok)">241<small>道</small></div><div class="stat-note">近 30 天新增 23 道</div></div>
+        <div class="stat"><div class="stat-label">待处理版本</div><div class="stat-value">7<small>个</small></div><div class="stat-note">存在历史试卷引用</div></div>
+      </div>
+      <div class="card" data-tab-scope>
+        <div class="card-hd"><h2>题目列表<span class="sub">题目版本只追加，不覆盖历史作答</span></h2><button class="btn btn-sm" data-toast-message="已导出当前筛选结果">⇩ 导出</button></div>
+        <div class="card-bd" style="padding-bottom:0"><div class="tabs"><button class="active" data-tab-group="status" data-tab="all">全部 <span class="muted">286</span></button><button data-tab-group="status" data-tab="review">待审核 <span class="muted">18</span></button><button data-tab-group="status" data-tab="enabled">已启用 <span class="muted">241</span></button><button data-tab-group="status" data-tab="disabled">已停用 <span class="muted">27</span></button></div></div>
+        <div class="card-bd" style="padding-top:12px"><div class="toolbar"><input class="grow" type="search" placeholder="搜索题干、题目编号或知识点"><select><option>全部题型</option><option>单选题</option><option>多选题</option><option>简答题</option><option>量表题</option></select><select><option>全部能力维度</option><option>数据分析</option><option>问题解决</option><option>团队协作</option><option>专业判断</option></select><select><option>全部来源</option><option>人工录入</option><option>AI 生成</option></select><button class="btn" data-toast-message="筛选条件已应用">筛选</button></div>
+          <div class="tab-panel active" data-panel-group="status" data-panel="all"><div class="table-wrap"><table><thead><tr><th>题目</th><th>题型</th><th>能力维度</th><th>难度</th><th>来源/版本</th><th>状态</th><th>更新时间</th><th>操作</th></tr></thead><tbody>
+            <tr><td><b>Q-2026-0184</b><br><span class="muted">在数据治理项目中，最先需要确认的边界是什么？</span></td><td><span class="tag tag-info">单选题</span></td><td>专业判断<br><span class="muted">数据治理</span></td><td><span class="tag tag-warn">中</span></td><td>人工录入<br><span class="mono">v3</span></td><td><span class="tag tag-ok">已启用</span></td><td class="muted nowrap">今天 09:42</td><td class="ops"><a href="#" data-toast-message="题目详情已打开">查看</a><a href="p22-assessment-paper.html">组卷</a></td></tr>
+            <tr><td><b>Q-2026-0191</b><br><span class="muted">请结合实际项目，说明你如何处理跨部门指标口径冲突。</span></td><td><span class="tag tag-purple">简答题</span></td><td>沟通协作<br><span class="muted">问题解决</span></td><td><span class="tag tag-danger">难</span></td><td>AI 生成<br><span class="mono">v1</span></td><td><span class="tag tag-warn">待审核</span></td><td class="muted nowrap">昨天 18:10</td><td class="ops"><a href="#" data-open="#question-drawer">审核</a><a href="#" class="muted" aria-disabled="true">不可组卷</a></td></tr>
+            <tr><td><b>Q-2026-0177</b><br><span class="muted">我能在不确定信息下快速形成可执行方案。</span></td><td><span class="tag tag-gray">量表题</span></td><td>决策判断</td><td><span class="tag tag-info">易</span></td><td>人工录入<br><span class="mono">v2</span></td><td><span class="tag tag-gray">已停用</span></td><td class="muted nowrap">09-21 15:23</td><td class="ops"><a href="#" data-toast-message="已创建新版本草稿">新版本</a></td></tr>
+            <tr><td><b>Q-2026-0162</b><br><span class="muted">根据给定数据表，计算第二季度客户留存率。</span></td><td><span class="tag tag-info">单选题</span></td><td>数据分析</td><td><span class="tag tag-warn">中</span></td><td>AI 生成<br><span class="mono">v2</span></td><td><span class="tag tag-ok">已启用</span></td><td class="muted nowrap">09-20 10:11</td><td class="ops"><a href="#" data-toast-message="版本历史已打开">历史</a><a href="p22-assessment-paper.html">组卷</a></td></tr>
+          </tbody></table></div></div>
+          <div class="tab-panel" data-panel-group="status" data-panel="review"><div class="alert alert-warn"><span class="icon">!</span><div><b>18 道题目等待专家审核。</b> AI 生成题目需要完成题干、答案和能力维度三项确认后才能启用。</div></div><div class="empty-cell">仅展示待审核题目（原型筛选态）</div></div>
+          <div class="tab-panel" data-panel-group="status" data-panel="enabled"><div class="empty-cell">仅展示已启用题目（原型筛选态）</div></div>
+          <div class="tab-panel" data-panel-group="status" data-panel="disabled"><div class="empty-cell">仅展示已停用题目（原型筛选态）</div></div>
+        </div>
+      </div>
+      <div class="state-gallery"><div class="card-hd"><h2>状态覆盖</h2><span class="sub">原型评审用</span></div><div class="state-grid"><div class="state"><b>STATE: loading</b><p>题目表骨架屏，保留筛选区尺寸。</p></div><div class="state"><b>STATE: empty</b><p>当前筛选无题目，提供清除筛选入口。</p></div><div class="state"><b>STATE: error</b><p style="color:var(--danger)">题库服务暂时不可用，trace_id: …A91F</p></div><div class="state forbidden"><b>STATE: forbidden</b><p>当前角色不能审核题目。</p></div></div></div>
+    </div>
+  </main>
+</div>
+<div class="drawer" id="question-drawer" aria-label="题目编辑抽屉"><div class="drawer-head"><div><h2>编辑题目</h2><small class="muted">Q-2026-0191 · 新版本草稿</small></div><button class="btn btn-icon" data-close="#question-drawer" aria-label="关闭">×</button></div><div class="alert alert-info" style="margin-top:14px"><span class="icon">i</span><div>AI 生成题目必须由专家审核；当前内容不会直接进入试卷。</div></div><div class="form-grid"><div class="field full"><label>题干</label><textarea rows="4">请结合实际项目，说明你如何处理跨部门指标口径冲突。</textarea></div><div class="field"><label>题型</label><select><option>简答题</option><option>单选题</option><option>多选题</option></select></div><div class="field"><label>难度</label><select><option>难</option><option>中</option><option>易</option></select></div><div class="field"><label>能力维度</label><select><option>问题解决</option><option>沟通协作</option><option>专业判断</option></select></div><div class="field"><label>题目分值</label><input type="number" value="15"></div><div class="field full"><label>评分要点</label><textarea rows="4" placeholder="供人工和 AI 辅助评分使用，不作为唯一事实">识别冲突来源；说明协调机制；给出可落地的口径确认动作。</textarea><small>主观题使用评分量表，最终分必须人工确认。</small></div></div><div class="drawer-foot"><button class="btn" data-close="#question-drawer">取消</button><button class="btn" data-toast-message="题目草稿已保存">保存草稿</button><button class="btn btn-primary" data-toast-message="已提交专家审核">提交审核</button></div></div><div class="drawer-backdrop" data-close="#question-drawer"></div>
+<script src="assessment.js?v=20260928-nav2"></script>
+</body>
+</html>
+

@@ -1,0 +1,38 @@
+# 统一行尾与二进制识别，避免 Windows / Linux 协作时的换行抖动
+* text=auto eol=lf
+
+# 按平台约定强制行尾
+*.sh    text eol=lf
+*.bash  text eol=lf
+*.bat   text eol=crlf
+*.cmd   text eol=crlf
+*.ps1   text eol=crlf
+
+# 明确二进制（禁止行尾转换与文本 diff）
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
+*.gif   binary
+*.ico   binary
+*.webp  binary
+*.pdf   binary
+*.doc   binary
+*.docx  binary
+*.xls   binary
+*.xlsx  binary
+*.ppt   binary
+*.pptx  binary
+*.zip   binary
+*.7z    binary
+*.gz    binary
+*.mp4   binary
+*.mp3   binary
+*.m4a   binary
+*.woff  binary
+*.woff2 binary
+*.ttf   binary
+*.otf   binary
+
+# 生成物不参与 diff 统计
+frontend/dist/**  linguist-generated=true
+package-lock.json linguist-generated=true

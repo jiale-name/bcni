@@ -1,0 +1,205 @@
+# ============================================================================
+# AI 数字化人才平台 · 开发环境数据组件（CU-24）
+#
+# 对应架构 §7.1 / §7.3 / §7.4：
+#   - **自托管**：MySQL / Redis / Milvus / MinIO
+#   - **复用宿主机**：Ollama（:11434）、Dify（:80/5001）、Reranker（:9997）
+#     —— 它们**不在这里**定义；后端以宿主进程运行时直接访问 127.0.0.1，
+#        容器化后端时用 ``host.docker.internal``（Docker Desktop 已提供）。
+#   - **不含后端与前端**：架构 §7.3 明确后端跑在宿主 8002（用户手动管理进程），
+#     前端开发期用 Vite :5173。本文件只负责「数据区」。
+#
+# 启动：  docker compose -f deploy/docker-compose.dev.yml --env-file deploy/.env up -d
+# 停止：  docker compose -f deploy/docker-compose.dev.yml down
+# ============================================================================
+
+name: talent-platform-dev
+
+# ---------------------------------------------------------------------------
+# YAML 锚点：把「同一个健康检查写法」只写一次。
+# 注意 ``${VAR:-default}`` 的默认值必须与 backend/app/config.py 的 Settings 一致 ——
+# 两处不一致时，会出现「compose 起的库在 A 端口、后端连 B 端口」的静默错配。
+# ---------------------------------------------------------------------------
+x-restart: &restart
+  restart: unless-stopped
+
+networks:
+  talent-net:
+    driver: bridge
+
+volumes:
+  # ⚠️ **刻意用命名卷而不是 bind mount**（与架构 §7.3 的 ``./data/<组件>`` 略有不同，
+  #    属有意偏离，已登记评审文档 §7.3）：
+  #    Windows + Docker Desktop 下 bind mount 需要把宿主目录加入文件共享白名单，
+  #    未加时容器**起得来但写不进去**（报错发生在启动后几十秒，很难定位）。
+  #    命名卷零配置可用；需要「便于备份 / 迁移」时用
+  #    ``docker run --rm -v <卷名>:/d -v ${PWD}:/b alpine tar czf /b/backup.tgz -C /d .``
+  #    导出即可（README「备份与迁移」有现成命令）。
+  mysql-data:
+  redis-data:
+  minio-data:
+  milvus-data:
+  etcd-data:
+
+services:
+  # =========================================================================
+  # MySQL 8.0（DS-1，一期唯一关系库）
+  # =========================================================================
+  mysql:
+    <<: *restart
+    image: mysql:8.0
+    container_name: talent-mysql
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      # 🔴 时区固定为东八区：数据库里的时间是**本地 naive datetime**
+      #    （见 config.py 的时区约定），容器默认 UTC 会让 ``CURRENT_TIMESTAMP``
+      #    与 Python ``datetime.now()`` 差 8 小时 —— 分区表按 ``created_at`` 分区，
+      #    8 小时偏移会在月末把记录分到错误的月份分区里。
+      - --default-time-zone=+08:00
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?必须设置 MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-talent_platform_v2}
+      # 传给 docker-entrypoint-initdb.d/01-audit-account.sh（建审计专用只写账号）
+      AUDIT_DB_USER: ${AUDIT_DB_USER:-audit_writer}
+      AUDIT_DB_PASSWORD: ${AUDIT_DB_PASSWORD:?必须设置 AUDIT_DB_PASSWORD}
+    ports:
+      # ⚠️ 宿主端口可配：本机已有 MySQL 占着 3306 时，改成 ``MYSQL_HOST_PORT=13306``
+      #    并把 backend/.env 的 MYSQL_PORT 一起改掉（**两处必须同时改**）。
+      - "${MYSQL_HOST_PORT:-3306}:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+      # 只在**数据卷为空**（首次初始化）时执行；已有数据时改这里**不会**生效，
+      # 需要手工执行同一个脚本（README 有说明）。
+      - ./mysql-init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      # ``mysqladmin ping`` 只证明进程活着；这里带密码真连一次，才算「能接受业务连接」
+      test:
+        - CMD-SHELL
+        - mysqladmin ping -h 127.0.0.1 -uroot -p"$$MYSQL_ROOT_PASSWORD" --silent
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 40s
+    networks: [talent-net]
+
+  # =========================================================================
+  # Redis 7（会话 / 缓存 / 限流 / Agent 短期记忆；**只存可丢数据**）
+  # =========================================================================
+  redis:
+    <<: *restart
+    image: redis:7-alpine
+    container_name: talent-redis
+    command:
+      - redis-server
+      # AOF 持久化（架构 §7.3）。⚠️ 它保护的是「可丢数据」的**可恢复性**，
+      # 不是权威状态 —— 权威状态一律在 MySQL，Redis 抖动必须 fail-open。
+      - --appendonly
+      - "yes"
+      - --requirepass
+      - ${REDIS_PASSWORD:?必须设置 REDIS_PASSWORD}
+    ports:
+      - "${REDIS_HOST_PORT:-6379}:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a \"$$REDIS_PASSWORD\" ping | grep -q PONG"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    networks: [talent-net]
+
+  # =========================================================================
+  # MinIO（简历原始文件 + Milvus 的对象存储后端）
+  # =========================================================================
+  minio:
+    <<: *restart
+    image: minio/minio:latest
+    container_name: talent-minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:?必须设置 MINIO_ACCESS_KEY}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:?必须设置 MINIO_SECRET_KEY}
+    ports:
+      - "${MINIO_API_PORT:-9000}:9000"     # S3 API
+      - "${MINIO_CONSOLE_PORT:-9001}:9001" # 控制台
+    volumes:
+      - minio-data:/data
+    healthcheck:
+      # ⚠️ 用 MinIO 自带的存活探针端点而非 ``mc ready local``：
+      #    近几个版本的 ``minio/minio`` 镜像里**不再自带 ``mc``**（它在 ``minio/mc`` 镜像里），
+      #    写 ``mc`` 会让健康检查永远失败 —— 而它又被 Milvus 的 ``depends_on`` 引用，
+      #    于是现象变成「Milvus 永远不启动」，排查方向完全被带偏。
+      test: ["CMD-SHELL", "curl -fsS http://localhost:9000/minio/health/live || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
+    networks: [talent-net]
+
+  # =========================================================================
+  # etcd（Milvus 的元数据依赖；standalone 模式**必需**，不是可选组件）
+  # =========================================================================
+  etcd:
+    <<: *restart
+    image: quay.io/coreos/etcd:v3.5.14
+    container_name: talent-etcd
+    environment:
+      ETCD_AUTO_COMPACTION_MODE: revision
+      ETCD_AUTO_COMPACTION_RETENTION: "1000"
+      ETCD_QUOTA_BACKEND_BYTES: "4294967296"
+      ETCD_SNAPSHOT_COUNT: "50000"
+    command: >-
+      etcd -advertise-client-urls=http://127.0.0.1:2379
+      -listen-client-urls http://0.0.0.0:2379
+      --data-dir /etcd
+    volumes:
+      - etcd-data:/etcd
+    healthcheck:
+      test: ["CMD", "etcdctl", "endpoint", "health"]
+      interval: 30s
+      timeout: 20s
+      retries: 5
+      start_period: 20s
+    networks: [talent-net]
+
+  # =========================================================================
+  # Milvus standalone v2.4.x（DS-2，仅存脱敏检索单元；N4/N5 启用）
+  # =========================================================================
+  milvus:
+    <<: *restart
+    image: milvusdb/milvus:v2.4.15
+    container_name: talent-milvus
+    command: ["milvus", "run", "standalone"]
+    security_opt:
+      - seccomp:unconfined
+    environment:
+      ETCD_ENDPOINTS: etcd:2379
+      MINIO_ADDRESS: minio:9000
+      # 🔴 **必须与 backend/.env 的 MINIO_ACCESS_KEY / MINIO_SECRET_KEY 一致**：
+      #    Milvus 用同一套凭据访问 MinIO，不一致时 Milvus 起不来（但报错在它自己的日志里，
+      #    现象是「后端连得上 Milvus 却没有集合」）。
+      MINIO_ACCESS_KEY_ID: ${MINIO_ACCESS_KEY:?必须设置 MINIO_ACCESS_KEY}
+      MINIO_SECRET_ACCESS_KEY: ${MINIO_SECRET_KEY:?必须设置 MINIO_SECRET_KEY}
+      MINIO_BUCKET_NAME: ${MILVUS_BUCKET:-milvus-bucket}
+    volumes:
+      - milvus-data:/var/lib/milvus
+    ports:
+      - "${MILVUS_PORT:-19530}:19530"   # gRPC / SDK
+      - "${MILVUS_HTTP_PORT:-9091}:9091" # 指标
+    depends_on:
+      etcd:
+        condition: service_healthy
+      # ⚠️ minio 只要 ``service_started``：Milvus 自带重试，而要求 minio 健康
+      #    会把「MinIO 健康检查因镜像缺少 curl 而失败」升级成「Milvus 根本不起」，
+      #    故障面被无谓放大。**弱依赖用弱条件**。
+      minio:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9091/healthz"]
+      interval: 30s
+      timeout: 20s
+      retries: 5
+      start_period: 90s
+    networks: [talent-net]

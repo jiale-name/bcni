@@ -1,0 +1,437 @@
+### POST /api/v1/auth/login  |  API-01 账号密码登录
+  BODY(application/json): LoginRequest
+  RESP 200: CommonResp_LoginOut_
+  RESP 422: HTTPValidationError
+
+### POST /api/v1/auth/refresh  |  API-02 刷新 access_token
+  BODY(application/json): RefreshRequest
+  RESP 200: CommonResp_RefreshOut_
+  RESP 422: HTTPValidationError
+
+### POST /api/v1/auth/logout  |  API-03 登出
+  BODY(application/json): None
+  RESP 200: CommonResp_LogoutOut_
+  RESP 422: HTTPValidationError
+
+### GET /api/v1/auth/me  |  API-04 当前用户信息与数据域
+  RESP 200: CommonResp_UserInfoOut_
+
+### GET /api/v1/auth/permissions  |  API-05 按钮级权限快照
+  RESP 200: CommonResp_PermissionsOut_
+
+### PUT /api/v1/auth/password  |  API-06 修改本人密码
+  BODY(application/json): ChangePasswordRequest
+  RESP 200: CommonResp_ChangePasswordOut_
+  RESP 422: HTTPValidationError
+
+### GET /api/v1/roles  |  API-18 角色列表（预置 + 自定义）
+  RESP 200: CommonResp_RoleListOut_
+
+### POST /api/v1/roles  |  API-19 新建自定义角色
+  BODY(application/json): RoleCreateRequest
+  RESP 200: CommonResp_RoleOut_
+  RESP 422: HTTPValidationError
+
+### PUT /api/v1/roles/{role_id}  |  API-20 修改角色（含 data_scope）
+  Q: role_id[path]*:integer
+  BODY(application/json): RoleUpdateRequest
+  RESP 200: CommonResp_RoleOut_
+  RESP 422: HTTPValidationError
+
+### GET /api/v1/permissions/tree  |  API-21 权限点树（菜单 / 按钮 / 接口）
+  RESP 200: CommonResp_PermissionTreeOut_
+
+### PUT /api/v1/roles/{role_id}/permissions  |  API-22 绑定权限点（全量替换）
+  Q: role_id[path]*:integer
+  BODY(application/json): BindPermissionsRequest
+  RESP 200: CommonResp_RolePermissionsOut_
+  RESP 422: HTTPValidationError
+
+### GET /api/v1/orgs/tree  |  API-07 组织架构树（≥5 级）
+  RESP 200: CommonResp_OrgTreeOut_
+
+### POST /api/v1/orgs  |  API-08 新建部门
+  BODY(application/json): OrgCreateRequest
+  RESP 200: CommonResp_OrgNodeOut_
+  RESP 422: HTTPValidationError
+
+### PUT /api/v1/orgs/{org_id}  |  API-09 修改部门（含移动父节点）
+  Q: org_id[path]*:integer
+  BODY(application/json): OrgUpdateRequest
+  RESP 200: CommonResp_OrgNodeOut_
+  RESP 422: HTTPValidationError
+
+### DELETE /api/v1/orgs/{org_id}  |  API-10 删除部门（有子部门或在职账号时拒绝）
+  Q: org_id[path]*:integer
+  RESP 200: CommonResp_OrgDeleteOut_
+  RESP 422: HTTPValidationError
+
+### GET /api/v1/positions  |  API-11 岗位列表
+  Q: dept_id[query]:any, status[query]:any, keyword[query]:any
+  RESP 200: CommonResp_PositionListOut_
+  RESP 422: HTTPValidationError
+
+### POST /api/v1/positions  |  API-12 新建岗位
+  BODY(application/json): PositionCreateRequest
+  RESP 200: CommonResp_PositionOut_
+  RESP 422: HTTPValidationError
+
+### POST /api/v1/users/import  |  API-17 批量导入用户（Excel / CSV 模板）
+  BODY(multipart/form-data): Body_import_users_api_v1_users_import_post
+  RESP 200: CommonResp_UserImportOut_
+  RESP 422: HTTPValidationError
+
+### GET /api/v1/users  |  API-13 用户列表（分页）
+  Q: keyword[query]:any, org_id[query]:any, position_id[query]:any, status[query]:any, role_id[query]:any, page[query]:integer, per_page[query]:integer
+  RESP 200: CommonResp_list_AdminUserOut__
+  RESP 422: HTTPValidationError
+
+### POST /api/v1/users  |  API-14 新建用户
+  BODY(application/json): UserCreateRequest
+  RESP 200: CommonResp_UserCreateOut_
+  RESP 422: HTTPValidationError
+
+### PUT /api/v1/users/{user_id}  |  API-15 修改用户（含启用/禁用）
+  Q: user_id[path]*:integer
+  BODY(application/json): UserUpdateRequest
+  RESP 200: CommonResp_AdminUserOut_
+  RESP 422: HTTPValidationError
+
+### PUT /api/v1/users/{user_id}/roles  |  API-16 分配角色（全量替换）
+  Q: user_id[path]*:integer
+  BODY(application/json): AssignRolesRequest
+  RESP 200: CommonResp_UserRolesOut_
+  RESP 422: HTTPValidationError
+
+### GET /api/v1/dicts  |  API-23 字典类型列表（仅 ADM）
+  Q: status[query]:any, keyword[query]:any
+  RESP 200: CommonResp_DictTypeListOut_
+  RESP 422: HTTPValidationError
+
+### GET /api/v1/dicts/{type_code}/items  |  API-24 字典项列表（已登录即可）
+  Q: type_code[path]*:string, status[query]:any, parent_code[query]:any, keyword[query]:any
+  RESP 200: CommonResp_DictItemListOut_
+  RESP 422: HTTPValidationError
+
+### POST /api/v1/dicts/{type_code}/items  |  API-25 新增字典项（仅 ADM）
+  Q: type_code[path]*:string
+  BODY(application/json): DictItemCreateRequest
+  RESP 200: CommonResp_DictItemOut_
+  RESP 422: HTTPValidationError
+
+### PUT /api/v1/dict-items/{item_id}  |  API-26 修改字典项（仅 ADM，留痕）
+  Q: item_id[path]*:integer
+  BODY(application/json): DictItemUpdateRequest
+  RESP 200: CommonResp_DictItemOut_
+  RESP 422: HTTPValidationError
+
+### DELETE /api/v1/dict-items/{item_id}  |  API-27 停用字典项（仅 ADM，不物理删）
+  Q: item_id[path]*:integer
+  RESP 200: CommonResp_DictItemDeleteOut_
+  RESP 422: HTTPValidationError
+
+### GET /api/v1/audit-logs  |  API-28 审计日志查询（ADM / AUDIT）
+  Q: page[query]:integer, per_page[query]:integer, user_id[query]:any, action[query]:any, target_type[query]:any, target_id[query]:any, start_time[query]:any, end_time[query]:any, keyword[query]:any
+  RESP 200: CommonResp_list_AuditLogOut__
+  RESP 422: HTTPValidationError
+
+### POST /api/v1/audit-logs/export  |  API-29 导出审计日志（ADM / AUDIT，导出自身留痕）
+  BODY(application/json): AuditExportRequest
+  RESP 200: CommonResp_AuditExportOut_
+  RESP 422: HTTPValidationError
+
+### GET /api/v1/ai/models  |  API-81 模型配置列表（AIOPS）
+  Q: scene[query]:any, status[query]:any, page[query]:integer, per_page[query]:integer
+  RESP 200: CommonResp_list_ModelConfigOut__
+  RESP 422: HTTPValidationError
+
+### GET /api/v1/ai/models/health  |  API-83 模型健康与熔断状态（ADM / AIOPS）
+  Q: scene[query]:any
+  RESP 200: CommonResp_ModelHealthOut_
+  RESP 422: HTTPValidationError
+
+### PUT /api/v1/ai/models/{model_id}  |  API-82 修改模型配置与主备路由（AIOPS）
+  Q: model_id[path]*:integer
+  BODY(application/json): ModelConfigUpdateRequest
+  RESP 200: CommonResp_ModelConfigOut_
+  RESP 422: HTTPValidationError
+
+### GET /api/v1/ai/prompts  |  API-84 Prompt 模板列表（含版本）（AIOPS）
+  Q: scene[query]:any, prompt_code[query]:any, status[query]:any, page[query]:integer, per_page[query]:integer
+  RESP 200: CommonResp_list_PromptOut__
+  RESP 422: HTTPValidationError
+
+### POST /api/v1/ai/prompts  |  API-85 新建 Prompt 模板（AIOPS）
+  BODY(application/json): PromptCreateRequest
+  RESP 200: CommonResp_PromptOut_
+  RESP 422: HTTPValidationError
+
+### PUT /api/v1/ai/prompts/{prompt_id}  |  API-86 修改 Prompt（生成新版本，不改历史）（AIOPS）
+  Q: prompt_id[path]*:integer
+  BODY(application/json): PromptUpdateRequest
+  RESP 200: CommonResp_PromptOut_
+  RESP 422: HTTPValidationError
+
+### POST /api/v1/ai/prompts/{prompt_id}/rollback  |  API-87 回滚到指定版本（AIOPS）
+  Q: prompt_id[path]*:integer
+  BODY(application/json): PromptRollbackRequest
+  RESP 200: CommonResp_PromptOut_
+  RESP 422: HTTPValidationError
+
+### GET /api/v1/ai/call-logs  |  API-88 AI 调用日志（ADM / AIOPS / AUDIT）
+  Q: page[query]:integer, per_page[query]:integer, scene[query]:any, model[query]:any, status[query]:any, cache_hit[query]:any, mask_applied[query]:any, user_id[query]:any, trace_id[query]:any, start_time[query]:any, end_time[query]:any
+  RESP 200: AiCallLogListResp
+  RESP 422: HTTPValidationError
+
+### GET /api/v1/ai/cost-dashboard  |  API-89 Token 成本看板（ADM / EXEC / AIOPS）
+  Q: scene[query]:any, model[query]:any, start_time[query]:any, end_time[query]:any
+  RESP 200: CommonResp_CostDashboardOut_
+  RESP 422: HTTPValidationError
+
+### GET /api/v1/agent/tasks  |  API-90 Agent 任务列表（ADM / HR / AIOPS）
+  Q: page[query]:integer, per_page[query]:integer, task_type[query]:any, status[query]:any, biz_id[query]:any
+  RESP 200: CommonResp_list_AgentTaskOut__
+  RESP 422: HTTPValidationError
+
+### GET /api/v1/agent/tasks/{task_id}  |  API-91 任务详情 + 图状态（ADM / HR / AIOPS）
+  Q: task_id[path]*:integer
+  RESP 200: CommonResp_AgentTaskDetailOut_
+  RESP 422: HTTPValidationError
+
+### GET /api/v1/agent/tasks/{task_id}/steps  |  API-92 步骤回放（输入 / 输出 / 耗时）（ADM / HR / AIOPS）
+  Q: task_id[path]*:integer, page[query]:integer, per_page[query]:integer
+  RESP 200: CommonResp_list_AgentStepOut__
+  RESP 422: HTTPValidationError
+
+### GET /api/v1/agent/interrupts  |  API-93 人工介入待办列表（ADM / HR / AIOPS）
+  Q: page[query]:integer, per_page[query]:integer, status[query]:any, task_id[query]:any, interrupt_type[query]:any, assignee_role[query]:any
+  RESP 200: CommonResp_list_AgentInterruptOut__
+  RESP 422: HTTPValidationError
+
+### POST /api/v1/agent/interrupts/{interrupt_id}/resolve  |  ⭐API-94 处理人工待办（approved / rejected + 恢复执行）（ADM / HR / AIOPS）
+  Q: interrupt_id[path]*:integer, Idempotency-Key[header]:any
+  BODY(application/json): InterruptResolveRequest
+  RESP 200: CommonResp_InterruptResolveOut_
+  RESP 422: HTTPValidationError
+
+### POST /api/v1/agent/tasks/{task_id}/retry  |  API-95 重试失败任务（ADM / AIOPS）
+  Q: task_id[path]*:integer
+  RESP 200: CommonResp_AgentTaskRetryOut_
+  RESP 422: HTTPValidationError
+
+### POST /api/v1/talent/import  |  Create Import Task
+  Q: Idempotency-Key[header]:any
+  BODY(multipart/form-data): Body_create_import_task_api_v1_talent_import_post
+  RESP 200: CommonResp_ImportCreateOut_
+  RESP 422: HTTPValidationError
+
+### GET /api/v1/talent/import  |  List Import Tasks
+  Q: status[query]:any, page[query]:integer, per_page[query]:integer
+  RESP 200: CommonResp_ImportTaskOut_
+  RESP 422: HTTPValidationError
+
+### GET /api/v1/talent/import/{task_id}  |  Get Import Task
+  Q: task_id[path]*:integer
+  RESP 200: CommonResp_ImportTaskOut_
+  RESP 422: HTTPValidationError
+
+### GET /api/v1/talent/import/{task_id}/progress  |  Stream Import Progress
+  Q: task_id[path]*:integer, interval[query]:number
+  RESP 200: -
+  RESP 422: HTTPValidationError
+
+### GET /api/v1/talent/import/{task_id}/files  |  List Import Files
+  Q: task_id[path]*:integer, parse_status[query]:any, page[query]:integer, per_page[query]:integer
+  RESP 200: CommonResp
+  RESP 422: HTTPValidationError
+
+### GET /api/v1/talent/import/{task_id}/report  |  Get Import Report
+  Q: task_id[path]*:integer
+  RESP 200: CommonResp
+  RESP 422: HTTPValidationError
+
+### GET /api/v1/talent/import/{task_id}/report/export  |  Export Import Report
+  Q: task_id[path]*:integer
+  RESP 200: CommonResp
+  RESP 422: HTTPValidationError
+
+### POST /api/v1/talent/import/{task_id}/retry  |  Retry Import Task
+  Q: task_id[path]*:integer
+  RESP 200: CommonResp
+  RESP 422: HTTPValidationError
+
+### GET /api/v1/talent/review  |  Review Queue
+  Q: page[query]:integer, per_page[query]:integer, task_id[query]:any, impact_level[query]:string, confidence_max[query]:any, field_codes[query]:any, sample_only[query]:boolean
+  RESP 200: ReviewQueueResp
+  RESP 422: HTTPValidationError
+
+### GET /api/v1/talent/review/dashboard  |  Review Dashboard
+  RESP 200: CommonResp_ReviewDashboardOut_
+
+### GET /api/v1/talent/review/{field_id}  |  Review Detail
+  Q: field_id[path]*:integer
+  RESP 200: CommonResp_ReviewDetailOut_
+  RESP 422: HTTPValidationError
+
+### POST /api/v1/talent/review/confirm  |  Review Confirm
+  BODY(application/json): object
+  RESP 200: CommonResp_ReviewConfirmOut_
+  RESP 422: HTTPValidationError
+
+### POST /api/v1/talent/review/{field_id}/correct  |  Review Correct
+  Q: field_id[path]*:integer
+  BODY(application/json): object
+  RESP 200: CommonResp_ReviewCorrectOut_
+  RESP 422: HTTPValidationError
+
+### POST /api/v1/talent/review/{field_id}/skip  |  Review Skip
+  Q: field_id[path]*:integer
+  RESP 200: CommonResp_ReviewCorrectOut_
+  RESP 422: HTTPValidationError
+
+### GET /api/v1/talent/tag-dict  |  Tag Dict
+  Q: view[query]:string, status[query]:any, keyword[query]:any, page[query]:integer, per_page[query]:integer
+  RESP 200: CommonResp
+  RESP 422: HTTPValidationError
+
+### POST /api/v1/talent/tag-dict  |  Create Tag
+  BODY(application/json): TagCreateRequest
+  RESP 200: CommonResp_TagDictOut_
+  RESP 422: HTTPValidationError
+
+### PUT /api/v1/talent/tag-dict/{tag_id}  |  Update Tag
+  Q: tag_id[path]*:integer
+  BODY(application/json): TagUpdateRequest
+  RESP 200: CommonResp_TagDictOut_
+  RESP 422: HTTPValidationError
+
+### POST /api/v1/talent/tag-dict/suggestions  |  Suggest Tag
+  BODY(application/json): TagSuggestRequest
+  RESP 200: CommonResp_TagSuggestOut_
+  RESP 422: HTTPValidationError
+
+### POST /api/v1/talent/tag-dict/suggestions/{suggestion_id}/review  |  Review Tag Suggestion
+  Q: suggestion_id[path]*:integer
+  BODY(application/json): TagReviewRequest
+  RESP 200: CommonResp_TagReviewOut_
+  RESP 422: HTTPValidationError
+
+### GET /api/v1/talents/{talent_id}/tags  |  Talent Tags
+  Q: talent_id[path]*:integer
+  RESP 200: CommonResp_TalentTagsOut_
+  RESP 422: HTTPValidationError
+
+### PUT /api/v1/talents/{talent_id}/tags  |  Assign Talent Tags
+  Q: talent_id[path]*:integer
+  BODY(application/json): TalentTagsPutRequest
+  RESP 200: CommonResp_TalentTagsOut_
+  RESP 422: HTTPValidationError
+
+### GET /api/v1/talent/dedup  |  List Dedup Pairs
+  Q: status[query]:any, page[query]:integer, per_page[query]:integer
+  RESP 200: CommonResp
+  RESP 422: HTTPValidationError
+
+### GET /api/v1/talent/dedup/{pair_id}  |  Compare Dedup Pair
+  Q: pair_id[path]*:integer
+  RESP 200: CommonResp_DupCompareOut_
+  RESP 422: HTTPValidationError
+
+### POST /api/v1/talent/dedup/{pair_id}/merge  |  Merge Dedup Pair
+  Q: pair_id[path]*:integer
+  BODY(application/json): DedupMergeRequest
+  RESP 200: CommonResp_DedupMergeOut_
+  RESP 422: HTTPValidationError
+
+### POST /api/v1/talent/dedup/{pair_id}/ignore  |  Ignore Dedup Pair
+  Q: pair_id[path]*:integer
+  RESP 200: CommonResp_DupIgnoreOut_
+  RESP 422: HTTPValidationError
+
+### POST /api/v1/talent/dedup/merges/{merge_id}/rollback  |  Rollback Merge
+  Q: merge_id[path]*:integer
+  RESP 200: CommonResp_DedupRollbackOut_
+  RESP 422: HTTPValidationError
+
+### POST /api/v1/talent/search  |  Search Talents
+  BODY(application/json): SearchRequest
+  RESP 200: CommonResp_SearchOut_
+  RESP 422: HTTPValidationError
+
+### POST /api/v1/talent/ask  |  Ask Talents
+  BODY(application/json): AskRequest
+  RESP 200: -
+  RESP 422: HTTPValidationError
+
+### GET /api/v1/talent/changes  |  API-67 变更留痕列表（ADM / HR / AUDIT）
+  Q: page[query]:integer, per_page[query]:integer, talent_id[query]:any, field_name[query]:any, change_source[query]:any, operator_id[query]:any, task_id[query]:any, start_time[query]:any, end_time[query]:any
+  RESP 200: CommonResp_list_ChangeLogOut__
+  RESP 422: HTTPValidationError
+
+### GET /api/v1/talents/{talent_id}/changes  |  API-68 单档案变更链（ADM / HR / AUDIT）
+  Q: talent_id[path]*:integer, page[query]:integer, per_page[query]:integer, talent_id[query]:any, field_name[query]:any, change_source[query]:any, operator_id[query]:any, task_id[query]:any, start_time[query]:any, end_time[query]:any
+  RESP 200: CommonResp_list_ChangeLogOut__
+  RESP 422: HTTPValidationError
+
+### GET /api/v1/talents/{talent_id}/snapshot  |  API-69 时间点快照回溯（ADM / HR / AUDIT，纯读）
+  Q: talent_id[path]*:integer, at[query]*:string, field_codes[query]:any
+  RESP 200: CommonResp_SnapshotOut_
+  RESP 422: HTTPValidationError
+
+### GET /api/v1/talents/{talent_id}/fields/{field_code}/history  |  API-70 单字段完整变更链（ADM / HR / AUDIT）
+  Q: talent_id[path]*:integer, field_code[path]*:string
+  RESP 200: CommonResp_FieldHistoryOut_
+  RESP 422: HTTPValidationError
+
+### GET /api/v1/privacy/me/profile  |  API-71 查阅本人档案（EMP 本人）
+  RESP 200: CommonResp
+
+### POST /api/v1/privacy/corrections  |  API-72 提交更正申请（EMP 本人）
+  BODY(application/json): CorrectionSubmitRequest
+  RESP 200: CommonResp_CorrectionSubmitOut_
+  RESP 422: HTTPValidationError
+
+### GET /api/v1/privacy/corrections  |  API-73 更正申请列表（ADM / HR；EMP 仅见自己的）
+  Q: page[query]:integer, per_page[query]:integer, request_type[query]:any, status[query]:any, talent_id[query]:any, applicant_user_id[query]:any, overdue_only[query]:boolean, start_time[query]:any, end_time[query]:any
+  RESP 200: CommonResp_list_PrivacyRequestOut__
+  RESP 422: HTTPValidationError
+
+### POST /api/v1/privacy/corrections/{request_id}/resolve  |  API-74 处理更正申请（ADM / HR，采纳即写档案 + 留痕）
+  Q: request_id[path]*:integer
+  BODY(application/json): CorrectionResolveRequest
+  RESP 200: CommonResp_CorrectionResolveOut_
+  RESP 422: HTTPValidationError
+
+### POST /api/v1/privacy/deletions  |  API-75 提交删除申请（EMP 本人）
+  BODY(application/json): DeletionSubmitRequest
+  RESP 200: CommonResp_DeletionSubmitOut_
+  RESP 422: HTTPValidationError
+
+### GET /api/v1/privacy/deletions  |  API-76 删除申请列表（ADM / HR；EMP 仅见自己的）
+  Q: page[query]:integer, per_page[query]:integer, request_type[query]:any, status[query]:any, talent_id[query]:any, applicant_user_id[query]:any, overdue_only[query]:boolean, start_time[query]:any, end_time[query]:any
+  RESP 200: CommonResp_list_PrivacyRequestOut__
+  RESP 422: HTTPValidationError
+
+### POST /api/v1/privacy/deletions/{request_id}/approve  |  API-77 审批删除（ADM，跨库一致性 + 强制幂等）
+  Q: request_id[path]*:integer, Idempotency-Key[header]:any
+  BODY(application/json): DeletionApproveRequest
+  RESP 200: CommonResp_DeletionApproveOut_
+  RESP 422: HTTPValidationError
+
+### POST /api/v1/privacy/exports  |  API-78 提交导出申请（EMP 本人，提交即完成）
+  BODY(application/json): ExportSubmitRequest
+  RESP 200: CommonResp_ExportSubmitOut_
+  RESP 422: HTTPValidationError
+
+### GET /api/v1/privacy/exports/{request_id}/download  |  API-79 下载个人数据包（EMP 本人 / ADM，下载留痕）
+  Q: request_id[path]*:integer
+  RESP 200: CommonResp_ExportDownloadOut_
+  RESP 422: HTTPValidationError
+
+### GET /api/v1/privacy/requests  |  API-80 权利请求统一台账（ADM / HR，含处理时限统计）
+  Q: page[query]:integer, per_page[query]:integer, request_type[query]:any, status[query]:any, talent_id[query]:any, applicant_user_id[query]:any, overdue_only[query]:boolean, start_time[query]:any, end_time[query]:any
+  RESP 200: CommonResp_PrivacyLedgerOut_
+  RESP 422: HTTPValidationError
+
+### GET /health  |  健康检查
+  RESP 200: CommonResp_dict_
