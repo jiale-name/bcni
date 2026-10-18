@@ -15,6 +15,8 @@
 | 后端 / 前端 | `backend\`（.venv）**8002**；`frontend\` 5173（proxy `/api`→8002，axios `/api/v1`） |
 | 原型 | `prototype\` 批次 14 定稿**选 A 多页**；页面清单事实源 = 架构 §4.2（前端 23 页） |
 | 自检器 | `backend\scripts\acceptance_check.py`（S-01~S-09） |
+| Git 仓库 / 规范 | **2026-10-12 初始化**：`main`（交付基线，受保护）+ `develop`（集成主干）；规范 = `docs\开发协作规范-Git分支策略与提交规范.md`（Conventional Commits + 强制 `scope`，footer 用 `CU: CU-nn` / `批次:` / `Refs: TBL-nn, API-nn` 绑编号，供 `git log --grep` 反查台账）。⚠️ **`.env` / `data/uploads`（简历原文）永不入库**；`.gitignore` 内**不可写通用 `env/`**（会吞掉需入库的 `cloud-package/env/`）；中文文件名须 `git -c core.quotepath=false ls-files` 才搜得到 |
+| 智能体编号段 | 主平台 API-01~95 / TBL-01~30 / P-1~20；**测评 Agent** API-096~159 / TBL-29~46（🔴 与主平台 TBL-29/30 撞号，见 `OPEN-ITEMS.md`）/ P-21~26；**人才画像智能体**（2026-10-12 申请）API-160~181 / TBL-47~52 / P-27~29 / `agent_task.task_type=profile` |
 
 **后端启动**（`backend/` 下，**不带 `--reload`**）：`.venv/Scripts/python.exe -m uvicorn app.main:app --host 0.0.0.0 --port 8002`（日志 `logs/uvicorn.YYYYMMDD.log`）
 
